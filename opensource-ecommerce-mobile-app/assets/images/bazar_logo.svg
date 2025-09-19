@@ -1,0 +1,17 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="256" cy="256" r="240" fill="#1E40AF" stroke="#F59E0B" stroke-width="8"/>
+  
+  <!-- Main B Letter -->
+  <path d="M 180 120 L 180 380 L 280 380 C 320 380 350 350 350 310 C 350 280 330 260 310 250 C 330 240 350 220 350 190 C 350 150 320 120 280 120 Z M 220 160 L 220 200 L 280 200 C 300 200 310 190 310 180 C 310 170 300 160 280 160 Z M 220 240 L 220 280 L 280 280 C 300 280 310 270 310 260 C 310 250 300 240 280 240 Z" fill="#FFFFFF"/>
+  
+  <!-- Shopping Bag Icon -->
+  <path d="M 320 180 L 320 200 L 340 200 L 340 220 L 360 220 L 360 200 L 380 200 L 380 180 L 360 180 L 360 160 L 340 160 L 340 180 Z" fill="#F59E0B"/>
+  
+  <!-- Shopping Cart Wheels -->
+  <circle cx="330" cy="300" r="15" fill="#F59E0B"/>
+  <circle cx="370" cy="300" r="15" fill="#F59E0B"/>
+  
+  <!-- Cart Handle -->
+  <path d="M 320 280 L 320 260 L 380 260 L 380 280" stroke="#F59E0B" stroke-width="4" fill="none"/>
+</svg>
