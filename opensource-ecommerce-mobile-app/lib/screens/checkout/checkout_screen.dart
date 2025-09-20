@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:bazar_marketplace_app/utils/bazar_theme.dart';
-import 'package:bazar_marketplace_app/widgets/glassmorphic_container.dart';
+import 'package:bazar_marketplace_app/widgets/glassmorphic_components.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class CheckoutScreen extends StatefulWidget {

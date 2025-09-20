@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bazar_marketplace_app/utils/bazar_theme.dart';
-import 'package:bazar_marketplace_app/widgets/glassmorphic_container.dart';
+import 'package:bazar_marketplace_app/widgets/glassmorphic_components.dart';
 
 class SearchBarWidget extends StatefulWidget {
   const SearchBarWidget({Key? key}) : super(key: key);
