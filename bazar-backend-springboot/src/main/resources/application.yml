@@ -1,0 +1,50 @@
+# BAZAR Marketplace - Configuration Minimale pour Test
+
+spring:
+  application:
+    name: bazar-marketplace
+  profiles:
+    active: dev
+  
+  # H2 Database Configuration
+  datasource:
+    url: jdbc:h2:mem:testdb
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+  
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+# Server Configuration
+server:
+  port: 8080
+
+# Management & Monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+
+# Logging Configuration
+logging:
+  level:
+    com.bazar.marketplace: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN

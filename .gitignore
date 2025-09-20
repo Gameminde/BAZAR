@@ -1,82 +1,52 @@
-# BAZAR Marketplace - Global .gitignore
+# BAZAR MARKETPLACE - GITIGNORE COMPLET
 
-# ========================================
-# FLUTTER / MOBILE APP
-# ========================================
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
-.pub-cache/
-.pub/
-/build/
+# ===========================================
+# BACKEND SPRING BOOT
+# ===========================================
+bazar-backend-springboot/target/
+bazar-backend-springboot/.mvn/wrapper/maven-wrapper.jar
+bazar-backend-springboot/logs/
+bazar-backend-springboot/*.log
 
-# Web related
-lib/generated_plugin_registrant.dart
+# ===========================================
+# FRONTEND FLUTTER
+# ===========================================
+opensource-ecommerce-mobile-app/build/
+opensource-ecommerce-mobile-app/.dart_tool/
+opensource-ecommerce-mobile-app/.packages
+opensource-ecommerce-mobile-app/.pub-cache/
+opensource-ecommerce-mobile-app/.pub/
+opensource-ecommerce-mobile-app/ios/Pods/
+opensource-ecommerce-mobile-app/ios/.symlinks/
+opensource-ecommerce-mobile-app/ios/Flutter/App.framework
+opensource-ecommerce-mobile-app/ios/Flutter/Flutter.framework
+opensource-ecommerce-mobile-app/ios/Flutter/Flutter.podspec
+opensource-ecommerce-mobile-app/ios/Flutter/Generated.xcconfig
+opensource-ecommerce-mobile-app/ios/Flutter/ephemeral/
+opensource-ecommerce-mobile-app/ios/Flutter/app.flx
+opensource-ecommerce-mobile-app/ios/Flutter/app.zip
+opensource-ecommerce-mobile-app/ios/Flutter/flutter_assets/
+opensource-ecommerce-mobile-app/ios/ServiceDefinitions.json
+opensource-ecommerce-mobile-app/ios/Runner/GeneratedPluginRegistrant.*
+opensource-ecommerce-mobile-app/android/.gradle/
+opensource-ecommerce-mobile-app/android/app/debug
+opensource-ecommerce-mobile-app/android/app/profile
+opensource-ecommerce-mobile-app/android/app/release
 
-# Symbolication related
-app.*.symbols
-
-# Obfuscation related
-app.*.map.json
-
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
-
-# ========================================
-# BACKEND / LARAVEL
-# ========================================
-# Laravel specific
-.env
-.env.testing
-.env.local
-.env.production
-.env.staging
-
-# Composer
-/vendor/
-composer.lock
-
-# Node modules
-/node_modules/
-npm-debug.log
-package-lock.json
-yarn.lock
-yarn-error.log
-
-# IDE
+# ===========================================
+# IDE & EDITORS
+# ===========================================
 .idea/
 .vscode/
-.php_cs.cache
-.phpunit.result.cache
-.vagrant/
-Homestead.json
-Homestead.yaml
+.cursor/
+.qodo/
+*.swp
+*.swo
+*~
 
-# Storage
-/storage/*.key
-/storage/dcc-data/
-/storage/logs/
-/storage/framework/cache/
-/storage/framework/sessions/
-/storage/framework/views/
-
-# Public assets
-/public/css/
-/public/js/
-/public/hot/
-/public/storage/
-/public/vendor/
-
-# ========================================
-# GENERAL
-# ========================================
-# OS generated files
+# ===========================================
+# OS FILES
+# ===========================================
 .DS_Store
 .DS_Store?
 ._*
@@ -85,76 +55,41 @@ Homestead.yaml
 ehthumbs.db
 Thumbs.db
 
-# Logs
-*.log
-logs/
-
-# Runtime data
-pids/
-*.pid
-*.seed
-*.pid.lock
-
-# Coverage directory used by tools like istanbul
-coverage/
-
-# Dependency directories
-node_modules/
-
-# Optional npm cache directory
-.npm
-
-# Optional REPL history
-.node_repl_history
-
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# ========================================
-# BAZAR SPECIFIC
-# ========================================
-# Build artifacts
-/build/
-/dist/
-/out/
-
-# Test results
-/test-results/
-/playwright-report/
-
-# Temporary files
+# ===========================================
+# TEMPORARY FILES
+# ===========================================
 *.tmp
 *.temp
-*.swp
-*.swo
-*~
+*.log
+*.zip
+*.tar.gz
+*.rar
 
-# Database
-*.sqlite
+# ===========================================
+# DOCUMENTATION BUILD
+# ===========================================
+docs/_build/
+site/
+
+# ===========================================
+# ENVIRONMENT FILES
+# ===========================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ===========================================
+# DATABASE FILES
+# ===========================================
 *.db
+*.sqlite
+*.sqlite3
 
-# Backup files
-*.bak
+# ===========================================
+# BACKUP FILES
+# ===========================================
 *.backup
-
-# ========================================
-# SECURITY
-# ========================================
-# Never commit sensitive files
-*.pem
-*.key
-*.crt
-*.p12
-*.pfx
-secrets/
-credentials/
-
-# ========================================
-# DOCUMENTATION
-# ========================================
-# Keep documentation but ignore generated files
-/docs/build/
-/docs/.docusaurus/
+*.bak
+*.old

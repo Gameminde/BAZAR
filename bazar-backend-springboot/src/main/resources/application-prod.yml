@@ -1,0 +1,200 @@
+# BAZAR Marketplace - Configuration Production
+# Environnement de production optimisé pour 5M utilisateurs
+
+spring:
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:bazar_prod}?useSSL=true&requireSSL=true&serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX:50}
+      minimum-idle: ${DB_POOL_MIN:10}
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000
+      validation-timeout: 5000
+      connection-test-query: SELECT 1
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: false
+        use_sql_comments: false
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+        batch_versioned_data: true
+        cache:
+          use_second_level_cache: true
+          use_query_cache: true
+          region:
+            factory_class: org.hibernate.cache.jcache.JCacheRegionFactory
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+  redis:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD}
+    ssl: ${REDIS_SSL:false}
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: ${REDIS_POOL_MAX:20}
+        max-idle: ${REDIS_POOL_IDLE:10}
+        min-idle: ${REDIS_POOL_MIN:5}
+        max-wait: -1ms
+      shutdown-timeout: 200ms
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: ${CACHE_TTL:3600000} # 1 hour
+      key-prefix: "bazar:prod:"
+      use-key-prefix: true
+      cache-null-values: false
+
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          ssl:
+            trust: ${MAIL_SSL_TRUST:}
+        transport:
+          protocol: smtp
+          rfc822-addresses: true
+
+# Logging production optimisé
+logging:
+  level:
+    com.bazar.marketplace: ${LOG_LEVEL:INFO}
+    org.springframework.web: WARN
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+    org.springframework.cache: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{requestId}] %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{requestId}] %logger{36} - %msg%n"
+  file:
+    name: /var/log/bazar-marketplace/application.log
+    max-size: 100MB
+    max-history: 30
+    total-size-cap: 1GB
+
+# JWT Production (clé forte)
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:3600000} # 1 hour
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 days
+
+# Rate limiting production
+rate-limit:
+  requests-per-minute: ${RATE_LIMIT_RPM:1000}
+  burst-capacity: ${RATE_LIMIT_BURST:2000}
+
+# CORS production restrictif
+cors:
+  allowed-origins:
+    - "${FRONTEND_URL:https://bazar-marketplace.com}"
+    - "${ADMIN_URL:https://admin.bazar-marketplace.com}"
+  allowed-methods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+    - OPTIONS
+  allowed-headers:
+    - Authorization
+    - Content-Type
+    - X-Requested-With
+    - Accept
+    - Origin
+  allow-credentials: true
+  max-age: 3600
+
+# Monitoring production
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5, 0.95, 0.99, 0.999
+
+# Performance tuning
+server:
+  tomcat:
+    threads:
+      max: ${TOMCAT_MAX_THREADS:200}
+      min-spare: ${TOMCAT_MIN_THREADS:10}
+    max-connections: ${TOMCAT_MAX_CONNECTIONS:8192}
+    accept-count: ${TOMCAT_ACCEPT_COUNT:100}
+    connection-timeout: ${TOMCAT_CONNECTION_TIMEOUT:20000}
+    max-http-form-post-size: 2MB
+    max-swallow-size: 2MB
+
+# Security production
+security:
+  headers:
+    frame-options: DENY
+    content-type-options: nosniff
+    xss-protection: "1; mode=block"
+    referrer-policy: strict-origin-when-cross-origin
+    content-security-policy: "default-src 'self'"
+  require-ssl: true
+
+# Application production settings
+bazar:
+  marketplace:
+    security:
+      password:
+        min-length: 12
+        require-uppercase: true
+        require-lowercase: true
+        require-digits: true
+        require-special-chars: true
+      session:
+        max-concurrent: 3
+        timeout: 900 # 15 minutes
+    features:
+      search:
+        enabled: true
+        max-results: 500
+      cache:
+        enabled: true
+        ttl: 1800 # 30 minutes
+      notifications:
+        email:
+          enabled: true
+        push:
+          enabled: true
+        sms:
+          enabled: false
