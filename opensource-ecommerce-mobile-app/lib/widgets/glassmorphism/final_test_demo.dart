@@ -5,7 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:bazar_marketplace_app/widgets/glassmorphism/index.dart';
+import 'package:bazar_marketplace_app/widgets/glassmorphic_components.dart';
 
 /// Widget de démonstration finale avec tests en temps réel
 class FinalTestDemoWidget extends StatefulWidget {
