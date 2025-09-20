@@ -6,10 +6,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:bazar_marketplace_app/screens/home_page/utils/index.dart';
-import 'package:bazar_marketplace_app/widgets/glassmorphic_card_basic.dart';
-import 'package:bazar_marketplace_app/widgets/floating_particles_widget_basic.dart';
-import 'package:bazar_marketplace_app/widgets/glassmorphic_appbar_simple.dart';
-import 'package:bazar_marketplace_app/utils/bazar_glassmorphism_theme.dart';
+import 'package:bazar_marketplace_app/widgets/glassmorphism/glassmorphic_components.dart';
+// import 'package:bazar_marketplace_app/widgets/floating_particles_widget_basic.dart'; // Supprimé, maintenant dans glassmorphic_components.dart
+// import 'package:bazar_marketplace_app/widgets/glassmorphic_appbar_simple.dart'; // Conflit avec glassmorphic_components.dart
+// import 'package:bazar_marketplace_app/utils/bazar_glassmorphism_theme.dart'; // Fichier supprimé
 import 'package:bazar_marketplace_app/utils/product_images.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 

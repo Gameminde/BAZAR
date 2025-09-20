@@ -71,13 +71,15 @@ class _ProductScreenState extends State<ProductScreen> {
       child: Scaffold(
         appBar: GlassmorphicAppBar(
           title: widget.title ?? 'Produit',
-          showBackButton: true,
-          onBackPressed: () {
-            if (productData != null) {
-              setRecentViewed(productData);
-            }
-            Navigator.pop(context);
-          },
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () {
+              if (productData != null) {
+                setRecentViewed(productData);
+              }
+              Navigator.pop(context);
+            },
+          ),
           actions: [
             GlassmorphicIconButton(
               icon: Icons.share,
@@ -145,27 +147,54 @@ class _ProductScreenState extends State<ProductScreen> {
   }
 
   _glassmorphicCartButton(int count) {
-    return GlassmorphicIconButton(
-      icon: Icons.shopping_bag_outlined,
-      badgeCount: count,
-      onPressed: () {
-        checkInternetConnection().then((value) {
-          if (value) {
-            Navigator.pushNamed(context, cartScreen).then((value) {
-              if (value == true) {
-                ProductScreenBloc productScreenBloc = context
-                    .read<ProductScreenBloc>();
-                productScreenBloc.add(FetchProductEvent(widget.urlKey ?? ""));
+    return Stack(
+      children: [
+        GlassmorphicIconButton(
+          icon: Icons.shopping_bag_outlined,
+          onPressed: () {
+            checkInternetConnection().then((value) {
+              if (value) {
+                Navigator.pushNamed(context, cartScreen).then((value) {
+                  if (value == true) {
+                    ProductScreenBloc productScreenBloc = context
+                        .read<ProductScreenBloc>();
+                    productScreenBloc.add(
+                      FetchProductEvent(widget.urlKey ?? ""),
+                    );
+                  }
+                });
+              } else {
+                ShowMessage.errorNotification(
+                  StringConstants.internetIssue.localized(),
+                  context,
+                );
               }
             });
-          } else {
-            ShowMessage.errorNotification(
-              StringConstants.internetIssue.localized(),
-              context,
-            );
-          }
-        });
-      },
+          },
+        ),
+        if (count > 0)
+          Positioned(
+            right: 0,
+            top: 0,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              child: Text(
+                '$count',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -325,27 +354,25 @@ class _ProductScreenState extends State<ProductScreen> {
                 text: StringConstants.addToCart.localized().toUpperCase(),
                 isPrimary: true,
                 width: MediaQuery.of(context).size.width,
-                onPressed: (productData?.isSaleable ?? false)
-                    ? () {
-                        checkInternetConnection().then((value) {
-                          if (value) {
-                            ProductScreenBloc productBloc = context
-                                .read<ProductScreenBloc>();
-                            productBloc.add(
-                              OnClickProductLoaderEvent(
-                                isReqToShowLoader: true,
-                              ),
-                            );
-                            _addToCart(context);
-                          } else {
-                            ShowMessage.errorNotification(
-                              StringConstants.internetIssue.localized(),
-                              context,
-                            );
-                          }
-                        });
+                onPressed: () {
+                  if (productData?.isSaleable ?? false) {
+                    checkInternetConnection().then((value) {
+                      if (value) {
+                        ProductScreenBloc productBloc = context
+                            .read<ProductScreenBloc>();
+                        productBloc.add(
+                          OnClickProductLoaderEvent(isReqToShowLoader: true),
+                        );
+                        _addToCart(context);
+                      } else {
+                        ShowMessage.errorNotification(
+                          StringConstants.internetIssue.localized(),
+                          context,
+                        );
                       }
-                    : null,
+                    });
+                  }
+                },
               ),
             ),
           ),

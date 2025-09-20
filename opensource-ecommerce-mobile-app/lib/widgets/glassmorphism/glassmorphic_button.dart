@@ -5,7 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'glassmorphic_card.dart';
+import 'glassmorphic_components.dart';
 
 /// Énumération pour les tailles de boutons
 enum ButtonSize { small, medium, large }

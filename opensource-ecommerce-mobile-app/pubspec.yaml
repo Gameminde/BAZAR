@@ -95,6 +95,7 @@ dev_dependencies:
   
   # Testing dependencies
   mockito: ^5.4.4
+  analyzer: 8.2.0
 
 
 flutter:

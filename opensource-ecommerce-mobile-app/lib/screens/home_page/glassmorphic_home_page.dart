@@ -9,9 +9,9 @@ import 'package:bazar_marketplace_app/screens/home_page/data_model/theme_customi
 import 'package:bazar_marketplace_app/screens/home_page/widget/service_content.dart';
 import 'package:bazar_marketplace_app/screens/home_page/widget/static_content_widget.dart';
 import 'package:bazar_marketplace_app/screens/home_page/widget/footer_links.dart';
-import 'package:bazar_marketplace_app/widgets/glassmorphic_card_basic.dart';
-import 'package:bazar_marketplace_app/widgets/floating_particles_widget_basic.dart';
-import 'package:bazar_marketplace_app/utils/bazar_glassmorphism_theme.dart';
+import 'package:bazar_marketplace_app/widgets/glassmorphism/glassmorphic_components.dart';
+// import 'package:bazar_marketplace_app/widgets/floating_particles_widget_basic.dart'; // Supprimé, maintenant dans glassmorphic_components.dart
+// import 'package:bazar_marketplace_app/utils/bazar_glassmorphism_theme.dart'; // Fichier supprimé
 import 'dart:developer';
 
 class GlassmorphicHomePage extends StatefulWidget {

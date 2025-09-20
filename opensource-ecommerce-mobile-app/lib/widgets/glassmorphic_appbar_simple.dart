@@ -5,7 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import '../utils/bazar_glassmorphism_theme.dart';
+// import '../utils/bazar_glassmorphism_theme.dart'; // Fichier supprimé
 
 class GlassmorphicAppBar extends StatelessWidget
     implements PreferredSizeWidget {

@@ -6,7 +6,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../utils/bazar_theme.dart';
-import 'glassmorphic_card.dart';
+import 'glassmorphic_components.dart';
 
 /// Système de particules flottantes pour effets glassmorphism
 class FloatingParticlesWidget extends StatefulWidget {

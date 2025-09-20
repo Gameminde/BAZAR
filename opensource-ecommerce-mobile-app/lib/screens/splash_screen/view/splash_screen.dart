@@ -11,6 +11,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:bazar_marketplace_app/screens/splash_screen/utils/index.dart';
 import 'package:bazar_marketplace_app/utils/bazar_theme.dart';
+import 'package:bazar_marketplace_app/utils/bazar_colors.dart';
 
 import '../../../utils/prefetching_helper.dart';
 
