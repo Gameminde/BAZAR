@@ -34,6 +34,7 @@ public class UserService {
     
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CacheService cacheService;
     
     // loadUserByUsername supprimé temporairement - à réimplémenter avec Spring Security
     
@@ -63,11 +64,11 @@ public class UserService {
         user.setEmail(userDTO.getEmail());
         user.setFirstName(userDTO.getFirstName());
         user.setLastName(userDTO.getLastName());
-        user.setPhoneNumber(userDTO.getPhoneNumber());
+        user.setPhone(userDTO.getPhoneNumber());
         user.setPasswordHash(passwordEncoder.encode("defaultPassword")); // Mot de passe temporaire
-        user.setActive(true);
-        user.setEmailVerified(false);
-        user.setPhoneVerified(false);
+        user.setIsActive(true);
+        user.setIsVerified(false);
+        user.setPhoneVerifiedAt(null);
         user.setRole(User.UserRole.USER);
         
         User savedUser = userRepository.save(user);
@@ -81,10 +82,10 @@ public class UserService {
         result.setEmail(savedUser.getEmail());
         result.setFirstName(savedUser.getFirstName());
         result.setLastName(savedUser.getLastName());
-        result.setPhoneNumber(savedUser.getPhoneNumber());
-        result.setActive(savedUser.getActive());
-        result.setEmailVerified(savedUser.getEmailVerified());
-        result.setPhoneVerified(savedUser.getPhoneVerified());
+        result.setPhoneNumber(savedUser.getPhone());
+        result.setActive(savedUser.getIsActive());
+        result.setEmailVerified(savedUser.getIsVerified());
+        result.setPhoneVerified(savedUser.getPhoneVerifiedAt() != null);
         result.setRole(savedUser.getRole().name());
         result.setCreatedAt(savedUser.getCreatedAt());
         result.setUpdatedAt(savedUser.getUpdatedAt());
@@ -123,7 +124,7 @@ public class UserService {
         existingUser.setEmail(userDTO.getEmail());
         existingUser.setFirstName(userDTO.getFirstName());
         existingUser.setLastName(userDTO.getLastName());
-        existingUser.setPhoneNumber(userDTO.getPhoneNumber());
+        existingUser.setPhone(userDTO.getPhoneNumber());
         
         User updatedUser = userRepository.save(existingUser);
         
@@ -136,10 +137,10 @@ public class UserService {
         result.setEmail(updatedUser.getEmail());
         result.setFirstName(updatedUser.getFirstName());
         result.setLastName(updatedUser.getLastName());
-        result.setPhoneNumber(updatedUser.getPhoneNumber());
-        result.setActive(updatedUser.getActive());
-        result.setEmailVerified(updatedUser.getEmailVerified());
-        result.setPhoneVerified(updatedUser.getPhoneVerified());
+        result.setPhoneNumber(updatedUser.getPhone());
+        result.setActive(updatedUser.getIsActive());
+        result.setEmailVerified(updatedUser.getIsVerified());
+        result.setPhoneVerified(updatedUser.getPhoneVerifiedAt() != null);
         result.setRole(updatedUser.getRole().name());
         result.setCreatedAt(updatedUser.getCreatedAt());
         result.setUpdatedAt(updatedUser.getUpdatedAt());
@@ -168,10 +169,10 @@ public class UserService {
         result.setEmail(user.getEmail());
         result.setFirstName(user.getFirstName());
         result.setLastName(user.getLastName());
-        result.setPhoneNumber(user.getPhoneNumber());
-        result.setActive(user.getActive());
-        result.setEmailVerified(user.getEmailVerified());
-        result.setPhoneVerified(user.getPhoneVerified());
+        result.setPhoneNumber(user.getPhone());
+        result.setActive(user.getIsActive());
+        result.setEmailVerified(user.getIsVerified());
+        result.setPhoneVerified(user.getPhoneVerifiedAt() != null);
         result.setRole(user.getRole().name());
         result.setCreatedAt(user.getCreatedAt());
         result.setUpdatedAt(user.getUpdatedAt());
@@ -200,10 +201,10 @@ public class UserService {
         result.setEmail(user.getEmail());
         result.setFirstName(user.getFirstName());
         result.setLastName(user.getLastName());
-        result.setPhoneNumber(user.getPhoneNumber());
-        result.setActive(user.getActive());
-        result.setEmailVerified(user.getEmailVerified());
-        result.setPhoneVerified(user.getPhoneVerified());
+        result.setPhoneNumber(user.getPhone());
+        result.setActive(user.getIsActive());
+        result.setEmailVerified(user.getIsVerified());
+        result.setPhoneVerified(user.getPhoneVerifiedAt() != null);
         result.setRole(user.getRole().name());
         result.setCreatedAt(user.getCreatedAt());
         result.setUpdatedAt(user.getUpdatedAt());
@@ -229,10 +230,10 @@ public class UserService {
             result.setEmail(user.getEmail());
             result.setFirstName(user.getFirstName());
             result.setLastName(user.getLastName());
-            result.setPhoneNumber(user.getPhoneNumber());
-            result.setActive(user.getActive());
-            result.setEmailVerified(user.getEmailVerified());
-            result.setPhoneVerified(user.getPhoneVerified());
+            result.setPhoneNumber(user.getPhone());
+            result.setActive(user.getIsActive());
+            result.setEmailVerified(user.getIsVerified());
+            result.setPhoneVerified(user.getPhoneVerifiedAt() != null);
             result.setRole(user.getRole().name());
             result.setCreatedAt(user.getCreatedAt());
             result.setUpdatedAt(user.getUpdatedAt());

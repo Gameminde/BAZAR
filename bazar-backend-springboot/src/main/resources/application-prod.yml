@@ -1,200 +1,253 @@
-# BAZAR Marketplace - Configuration Production
-# Environnement de production optimisé pour 5M utilisateurs
+# BAZAR Marketplace - Production Configuration
+# PostgreSQL + Redis + Security Enterprise
 
 spring:
+  application:
+    name: bazar-marketplace
+  
+  # PostgreSQL Production Configuration
   datasource:
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:bazar_prod}?useSSL=true&requireSSL=true&serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8
-    username: ${DB_USER}
-    password: ${DB_PASSWORD}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:bazar_marketplace}
+    username: ${DB_USERNAME:bazar_user}
+    password: ${DB_PASSWORD:bazar_password}
+    driver-class-name: org.postgresql.Driver
+    
+    # HikariCP Connection Pool - Enterprise Settings
     hikari:
-      maximum-pool-size: ${DB_POOL_MAX:50}
-      minimum-idle: ${DB_POOL_MIN:10}
+      maximum-pool-size: 50
+      minimum-idle: 10
       connection-timeout: 30000
       idle-timeout: 600000
       max-lifetime: 1800000
       leak-detection-threshold: 60000
-      validation-timeout: 5000
-      connection-test-query: SELECT 1
-
+      pool-name: BazarHikariCP
+      
+  # JPA Configuration for PostgreSQL
   jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: validate
+      ddl-auto: validate  # Never auto-create in production
     show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: false
-        use_sql_comments: false
         jdbc:
-          batch_size: 50
+          batch_size: 25
+          batch_versioned_data: true
         order_inserts: true
         order_updates: true
-        batch_versioned_data: true
+        connection:
+          provider_disables_autocommit: true
         cache:
           use_second_level_cache: true
           use_query_cache: true
           region:
-            factory_class: org.hibernate.cache.jcache.JCacheRegionFactory
-        jdbc:
-          lob:
-            non_contextual_creation: true
-
-  redis:
-    host: ${REDIS_HOST}
-    port: ${REDIS_PORT:6379}
-    password: ${REDIS_PASSWORD}
-    ssl: ${REDIS_SSL:false}
-    timeout: 2000ms
-    lettuce:
-      pool:
-        max-active: ${REDIS_POOL_MAX:20}
-        max-idle: ${REDIS_POOL_IDLE:10}
-        min-idle: ${REDIS_POOL_MIN:5}
-        max-wait: -1ms
-      shutdown-timeout: 200ms
-
+            factory_class: org.hibernate.cache.redis.hibernate52.SingletonRedisRegionFactory
+  
+  # Redis Configuration Production
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 0
+      timeout: 2000ms
+      ssl: ${REDIS_SSL:false}
+      lettuce:
+        pool:
+          max-active: 100
+          max-idle: 20
+          min-idle: 10
+          max-wait: 2000ms
+        cluster:
+          refresh:
+            adaptive: true
+            period: 30s
+  
+  # Cache Configuration
   cache:
     type: redis
     redis:
-      time-to-live: ${CACHE_TTL:3600000} # 1 hour
-      key-prefix: "bazar:prod:"
-      use-key-prefix: true
+      time-to-live: 3600000  # 1 hour
       cache-null-values: false
+      key-prefix: "bazar:cache:"
+      
+  # Flyway Migration Configuration
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    validate-on-migrate: true
+    locations: classpath:db/migration
+    schemas: public
+    table: flyway_schema_history
 
-  mail:
-    host: ${MAIL_HOST}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-            required: true
-          ssl:
-            trust: ${MAIL_SSL_TRUST:}
-        transport:
-          protocol: smtp
-          rfc822-addresses: true
+# Server Configuration Production
+server:
+  port: ${SERVER_PORT:8443}  # HTTPS port
+  
+  # SSL/TLS Configuration
+  ssl:
+    enabled: true
+    key-store: ${SSL_KEYSTORE_PATH:classpath:keystore/bazar-keystore.p12}
+    key-store-password: ${SSL_KEYSTORE_PASSWORD:bazar-secure-password}
+    key-store-type: PKCS12
+    key-alias: bazar-marketplace
+    protocol: TLS
+    enabled-protocols: TLSv1.3,TLSv1.2
+    ciphers: >
+      TLS_AES_256_GCM_SHA384,
+      TLS_CHACHA20_POLY1305_SHA256,
+      TLS_AES_128_GCM_SHA256,
+      TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+      TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+    client-auth: none
+    
+  # HTTP to HTTPS Redirect
+  http:
+    port: ${HTTP_PORT:8080}
+    
+  # Performance Configuration
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+    min-response-size: 1024
+  http2:
+    enabled: true
 
-# Logging production optimisé
-logging:
-  level:
-    com.bazar.marketplace: ${LOG_LEVEL:INFO}
-    org.springframework.web: WARN
-    org.springframework.security: WARN
-    org.hibernate.SQL: WARN
-    org.hibernate.type.descriptor.sql.BasicBinder: WARN
-    org.springframework.cache: WARN
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{requestId}] %logger{36} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{requestId}] %logger{36} - %msg%n"
-  file:
-    name: /var/log/bazar-marketplace/application.log
-    max-size: 100MB
-    max-history: 30
-    total-size-cap: 1GB
+# Actuator Configuration Production
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,env,configprops
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+      show-components: always
+      probes:
+        enabled: true
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+        step: 10s
+        descriptions: true
+    tags:
+      application: bazar-marketplace
+      environment: production
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      slo:
+        http.server.requests: 50ms,100ms,200ms,500ms
+  info:
+    env:
+      enabled: true
+    git:
+      mode: full
+  health:
+    redis:
+      enabled: true
+    db:
+      enabled: true
+    diskspace:
+      enabled: true
+    ping:
+      enabled: true
+  servlet:
+    context-path: /api/v1
+    
+  # Connection Settings
+  tomcat:
+    max-connections: 10000
+    max-threads: 200
+    min-spare-threads: 10
+    connection-timeout: 20000ms
+    keep-alive-timeout: 60000ms
 
-# JWT Production (clé forte)
-jwt:
-  secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION:3600000} # 1 hour
-  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 days
-
-# Rate limiting production
-rate-limit:
-  requests-per-minute: ${RATE_LIMIT_RPM:1000}
-  burst-capacity: ${RATE_LIMIT_BURST:2000}
-
-# CORS production restrictif
-cors:
-  allowed-origins:
-    - "${FRONTEND_URL:https://bazar-marketplace.com}"
-    - "${ADMIN_URL:https://admin.bazar-marketplace.com}"
-  allowed-methods:
-    - GET
-    - POST
-    - PUT
-    - DELETE
-    - OPTIONS
-  allowed-headers:
-    - Authorization
-    - Content-Type
-    - X-Requested-With
-    - Accept
-    - Origin
-  allow-credentials: true
-  max-age: 3600
-
-# Monitoring production
+# Management & Monitoring Production
 management:
   endpoints:
     web:
       exposure:
         include: health,info,metrics,prometheus
+      base-path: /actuator
   endpoint:
     health:
-      show-details: never
-      show-components: never
+      show-details: when-authorized
+      show-components: when-authorized
+    metrics:
+      enabled: true
   metrics:
     export:
       prometheus:
         enabled: true
-    distribution:
-      percentiles-histogram:
-        http.server.requests: true
-      percentiles:
-        http.server.requests: 0.5, 0.95, 0.99, 0.999
-
-# Performance tuning
-server:
-  tomcat:
-    threads:
-      max: ${TOMCAT_MAX_THREADS:200}
-      min-spare: ${TOMCAT_MIN_THREADS:10}
-    max-connections: ${TOMCAT_MAX_CONNECTIONS:8192}
-    accept-count: ${TOMCAT_ACCEPT_COUNT:100}
-    connection-timeout: ${TOMCAT_CONNECTION_TIMEOUT:20000}
-    max-http-form-post-size: 2MB
-    max-swallow-size: 2MB
-
-# Security production
+    tags:
+      application: ${spring.application.name}
+      environment: production
+      
+# Security Configuration
 security:
-  headers:
-    frame-options: DENY
-    content-type-options: nosniff
-    xss-protection: "1; mode=block"
-    referrer-policy: strict-origin-when-cross-origin
-    content-security-policy: "default-src 'self'"
-  require-ssl: true
+  jwt:
+    secret: ${JWT_SECRET:}  # Must be set via environment
+    expiration: 900000      # 15 minutes
+    refresh-expiration: 604800000  # 7 days
+    issuer: bazar-marketplace
+    algorithm: RS256
 
-# Application production settings
+# Logging Configuration Production
+logging:
+  level:
+    root: INFO
+    com.bazar.marketplace: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+    org.springframework.web: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: /var/log/bazar-marketplace/application.log
+    max-size: 100MB
+    max-history: 30
+
+# Application Specific Configuration
 bazar:
   marketplace:
-    security:
-      password:
-        min-length: 12
-        require-uppercase: true
-        require-lowercase: true
-        require-digits: true
-        require-special-chars: true
-      session:
-        max-concurrent: 3
-        timeout: 900 # 15 minutes
-    features:
-      search:
-        enabled: true
-        max-results: 500
-      cache:
-        enabled: true
-        ttl: 1800 # 30 minutes
-      notifications:
-        email:
-          enabled: true
-        push:
-          enabled: true
-        sms:
-          enabled: false
+    # File Upload Configuration
+    file:
+      upload:
+        path: ${FILE_UPLOAD_PATH:/var/bazar/uploads}
+        max-size: 10MB
+        allowed-types: jpg,jpeg,png,gif,webp
+    
+    # Email Configuration
+    email:
+      from: noreply@bazar-marketplace.com
+      smtp:
+        host: ${SMTP_HOST:smtp.gmail.com}
+        port: ${SMTP_PORT:587}
+        username: ${SMTP_USERNAME:}
+        password: ${SMTP_PASSWORD:}
+        auth: true
+        starttls: true
+    
+    # Redis Keys Configuration
+    cache:
+      keys:
+        user: "user:{userId}"
+        product: "product:{productId}"
+        category: "category:{categoryId}"
+        cart: "cart:{userId}"
+        session: "session:{sessionId}"
+      ttl:
+        user: 3600      # 1 hour
+        product: 1800   # 30 minutes
+        category: 21600 # 6 hours
+        cart: 2592000   # 30 days
+        session: 86400  # 24 hours

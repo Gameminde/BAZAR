@@ -159,6 +159,60 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Page<Product> findFeaturedProducts(Pageable pageable);
     
     /**
+     * Trouve les produits mis en avant (sans pagination pour cache)
+     * 
+     * @return la liste des produits mis en avant
+     */
+    @Query("SELECT p FROM Product p WHERE p.active = true AND p.featured = true")
+    List<Product> findByFeaturedTrue();
+    
+    /**
+     * Trouve les produits récents (top 50 pour cache)
+     * 
+     * @return la liste des produits récents
+     */
+    @Query("SELECT p FROM Product p WHERE p.active = true ORDER BY p.createdAt DESC")
+    List<Product> findTop50ByOrderByCreatedAtDesc();
+    
+    /**
+     * Trouve les produits par catégorie (pour cache)
+     * 
+     * @param categoryId l'ID de la catégorie
+     * @return la liste des produits
+     */
+    @Query("SELECT p FROM Product p WHERE p.category.id = :categoryId AND p.active = true")
+    List<Product> findByCategoryId(@Param("categoryId") Long categoryId);
+    
+    /**
+     * Trouve les produits avec stock faible (pour cache)
+     * 
+     * @param threshold le seuil de stock
+     * @return la liste des produits
+     */
+    @Query("SELECT p FROM Product p WHERE p.active = true AND p.trackQuantity = true AND p.stockQuantity <= :threshold")
+    List<Product> findByStockQuantityLessThanEqual(@Param("threshold") Integer threshold);
+    
+    /**
+     * Trouve les produits par gamme de prix (pour cache)
+     * 
+     * @param minPrice le prix minimum
+     * @param maxPrice le prix maximum
+     * @return la liste des produits
+     */
+    @Query("SELECT p FROM Product p WHERE p.active = true AND p.price BETWEEN :minPrice AND :maxPrice")
+    List<Product> findByPriceBetween(@Param("minPrice") BigDecimal minPrice, @Param("maxPrice") BigDecimal maxPrice);
+    
+    /**
+     * Recherche produits par nom (pour cache)
+     * 
+     * @param name le nom à rechercher
+     * @param pageable la pagination
+     * @return la page de produits
+     */
+    @Query("SELECT p FROM Product p WHERE p.active = true AND LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))")
+    Page<Product> findByNameContainingIgnoreCase(@Param("name") String name, Pageable pageable);
+    
+    /**
      * Trouve les produits numériques
      * 
      * @param pageable la pagination

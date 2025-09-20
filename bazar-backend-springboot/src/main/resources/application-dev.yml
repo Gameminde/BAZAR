@@ -1,45 +1,71 @@
-# BAZAR Marketplace - Configuration Développement
-# Profile dev avec H2 en mémoire pour développement local
+# BAZAR Marketplace - Development Configuration
+# PostgreSQL pour development (même DB qu'en prod)
 
 spring:
+  # PostgreSQL Development Configuration
   datasource:
-    url: jdbc:h2:mem:bazar_dev
-    username: sa
-    password: 
-    driver-class-name: org.h2.Driver
+    url: jdbc:postgresql://localhost:5432/bazar_marketplace_dev
+    username: bazar_dev
+    password: bazar_dev_password
+    driver-class-name: org.postgresql.Driver
+    
+    # HikariCP Connection Pool - Dev Settings
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 300000
+      max-lifetime: 900000
+      pool-name: BazarDevHikariCP
   
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-      settings:
-        web-allow-others: true
-  
+  # JPA Configuration for PostgreSQL Dev
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update  # Auto-update for development
     show-sql: true
     properties:
       hibernate:
         format_sql: true
+        jdbc:
+          batch_size: 10
+        order_inserts: true
+        order_updates: true
         use_sql_comments: true
         generate_statistics: false
         cache:
           use_second_level_cache: false
           use_query_cache: false
   
-  # Redis désactivé en dev (optionnel)
+  # Redis Configuration Development
   data:
     redis:
       host: localhost
       port: 6379
+      database: 1  # Different DB from production
       timeout: 2000ms
       lettuce:
         pool:
-          max-active: 8
-          max-idle: 8
-          min-idle: 0
+          max-active: 10
+          max-idle: 5
+          min-idle: 2
+          max-wait: 2000ms
+  
+  # Cache Configuration Dev
+  cache:
+    type: redis
+    redis:
+      time-to-live: 1800000  # 30 minutes
+      cache-null-values: false
+      key-prefix: "bazar:dev:cache:"
+      
+  # Flyway Migration Configuration Dev
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    validate-on-migrate: false  # Less strict for dev
+    locations: classpath:db/migration
+    schemas: public
 
 # Logging plus verbose en dev
 logging:
@@ -52,15 +78,26 @@ logging:
   
 # Security moins stricte en dev
 security:
+  jwt:
+    secret: dev-secret-key-not-for-production
+    expiration: 3600000      # 1 hour for dev
+    refresh-expiration: 86400000  # 1 day for dev
+    issuer: bazar-marketplace-dev
+    algorithm: HS256  # Less secure for dev
   headers:
-    frame-options: SAMEORIGIN # Permet H2 console
+    frame-options: SAMEORIGIN
 
 # Dev specific features
 bazar:
   marketplace:
     features:
       cache:
-        enabled: false # Pas de cache en dev
-        ttl: 60
+        enabled: true
+        ttl: 300  # 5 minutes in dev
       search:
-        max-results: 100 # Moins de résultats en dev
+        max-results: 100
+    file:
+      upload:
+        path: ./uploads
+        max-size: 5MB
+        allowed-types: jpg,jpeg,png,gif,webp

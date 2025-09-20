@@ -1,0 +1,124 @@
+server:
+  port: 8761
+
+spring:
+  application:
+    name: service-registry
+  
+  profiles:
+    active: development
+    
+  # Security configuration
+  security:
+    user:
+      name: admin
+      password: ${EUREKA_PASSWORD:admin123}
+      roles: USER
+
+eureka:
+  instance:
+    hostname: ${EUREKA_HOSTNAME:localhost}
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+    
+  client:
+    # This is a Eureka server, not a client
+    register-with-eureka: false
+    fetch-registry: false
+    service-url:
+      defaultZone: http://${spring.security.user.name}:${spring.security.user.password}@${eureka.instance.hostname}:${server.port}/eureka/
+    
+  server:
+    # Production settings for high availability
+    enable-self-preservation: true
+    eviction-interval-timer-in-ms: 15000
+    renewal-percent-threshold: 0.85
+    response-cache-auto-expiration-in-seconds: 180
+    
+    # Peer awareness settings
+    peer-eureka-nodes-update-interval-ms: 600000
+    peer-eureka-status-refresh-time-interval-ms: 30000
+
+# Actuator configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,env
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}
+      environment: ${spring.profiles.active}
+
+# Logging configuration
+logging:
+  level:
+    com.netflix.eureka: INFO
+    com.netflix.discovery: INFO
+    com.bazar.serviceregistry: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%logger{36}] - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%logger{36}] - %msg%n"
+  file:
+    name: logs/service-registry.log
+    max-size: 100MB
+    max-history: 30
+
+---
+# Development profile
+spring:
+  config:
+    activate:
+      on-profile: development
+      
+eureka:
+  client:
+    service-url:
+      defaultZone: http://admin:admin123@localhost:8761/eureka/
+
+---
+# Production profile  
+spring:
+  config:
+    activate:
+      on-profile: production
+
+eureka:
+  instance:
+    hostname: ${EUREKA_HOSTNAME:service-registry}
+  client:
+    service-url:
+      # Multiple Eureka servers for HA
+      defaultZone: http://admin:${EUREKA_PASSWORD}@eureka-1:8761/eureka/,http://admin:${EUREKA_PASSWORD}@eureka-2:8761/eureka/
+
+server:
+  # HTTPS configuration for production
+  ssl:
+    enabled: ${SSL_ENABLED:false}
+    key-store: ${SSL_KEYSTORE_PATH:classpath:keystore.p12}
+    key-store-password: ${SSL_KEYSTORE_PASSWORD:changeit}
+    key-store-type: PKCS12
+    key-alias: eureka
+
+---
+# Docker profile
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+eureka:
+  instance:
+    hostname: service-registry
+    prefer-ip-address: false
+  client:
+    service-url:
+      defaultZone: http://admin:${EUREKA_PASSWORD:admin123}@service-registry:8761/eureka/

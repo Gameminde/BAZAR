@@ -1,0 +1,487 @@
+version: '3.8'
+
+# BAZAR Marketplace - Microservices Architecture
+# Complete Docker Compose for Phase 3 implementation
+# Supports 1M+ users with distributed architecture
+
+networks:
+  bazar-microservices:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  postgres-data:
+  mongodb-data:
+  redis-data:
+  elasticsearch-data:
+  kafka-data:
+  zookeeper-data:
+
+services:
+  # =================================================================
+  # SERVICE DISCOVERY & API GATEWAY
+  # =================================================================
+  
+  service-registry:
+    build:
+      context: ../bazar-microservices/service-registry
+      dockerfile: Dockerfile
+    container_name: bazar-service-registry
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_HOSTNAME=service-registry
+      - EUREKA_PASSWORD=admin123
+    networks:
+      bazar-microservices:
+        ipv4_address: 172.20.0.10
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway
+    container_name: bazar-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://admin:admin123@service-registry:8761/eureka/
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+    depends_on:
+      - service-registry
+      - redis
+    networks:
+      bazar-microservices:
+        ipv4_address: 172.20.0.11
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # =================================================================
+  # CORE MICROSERVICES
+  # =================================================================
+
+  user-service:
+    build:
+      context: ../bazar-microservices/user-service
+      dockerfile: Dockerfile
+    container_name: bazar-user-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://admin:admin123@service-registry:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-user:5432/bazar_users
+      - SPRING_DATASOURCE_USERNAME=bazar_user
+      - SPRING_DATASOURCE_PASSWORD=bazar123
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+    depends_on:
+      - service-registry
+      - postgres-user
+      - redis
+    networks:
+      bazar-microservices:
+        ipv4_address: 172.20.0.20
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  product-service:
+    build:
+      context: ../bazar-microservices/product-service
+      dockerfile: Dockerfile
+    container_name: bazar-product-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://admin:admin123@service-registry:8761/eureka/
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/bazar_products
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - ELASTICSEARCH_HOST=elasticsearch
+      - ELASTICSEARCH_PORT=9200
+    depends_on:
+      - service-registry
+      - mongodb
+      - redis
+      - elasticsearch
+    networks:
+      bazar-microservices:
+        ipv4_address: 172.20.0.21
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  order-service:
+    build:
+      context: ../bazar-microservices/order-service
+      dockerfile: Dockerfile
+    container_name: bazar-order-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://admin:admin123@service-registry:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-order:5432/bazar_orders
+      - SPRING_DATASOURCE_USERNAME=bazar_user
+      - SPRING_DATASOURCE_PASSWORD=bazar123
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    depends_on:
+      - service-registry
+      - postgres-order
+      - redis
+      - kafka
+    networks:
+      bazar-microservices:
+        ipv4_address: 172.20.0.22
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  notification-service:
+    build:
+      context: ../bazar-microservices/notification-service
+      dockerfile: Dockerfile
+    container_name: bazar-notification-service
+    environment:
+      - NODE_ENV=docker
+      - EUREKA_HOST=service-registry
+      - EUREKA_PORT=8761
+      - MONGODB_URI=mongodb://mongodb:27017/bazar_notifications
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
+      - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY}
+    depends_on:
+      - service-registry
+      - mongodb
+      - rabbitmq
+    networks:
+      bazar-microservices:
+        ipv4_address: 172.20.0.23
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  analytics-service:
+    build:
+      context: ../bazar-microservices/analytics-service
+      dockerfile: Dockerfile
+    container_name: bazar-analytics-service
+    environment:
+      - FLASK_ENV=docker
+      - EUREKA_HOST=service-registry
+      - EUREKA_PORT=8761
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_PORT=8123
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - SPARK_MASTER_URL=spark://spark-master:7077
+    depends_on:
+      - service-registry
+      - clickhouse
+      - redis
+      - spark-master
+    networks:
+      bazar-microservices:
+        ipv4_address: 172.20.0.24
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # =================================================================
+  # DATABASES
+  # =================================================================
+
+  postgres-user:
+    image: postgres:15-alpine
+    container_name: bazar-postgres-user
+    environment:
+      POSTGRES_DB: bazar_users
+      POSTGRES_USER: bazar_user
+      POSTGRES_PASSWORD: bazar123
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      bazar-microservices:
+        ipv4_address: 172.20.0.30
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bazar_user -d bazar_users"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres-order:
+    image: postgres:15-alpine
+    container_name: bazar-postgres-order
+    environment:
+      POSTGRES_DB: bazar_orders
+      POSTGRES_USER: bazar_user
+      POSTGRES_PASSWORD: bazar123
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    networks:
+      bazar-microservices:
+        ipv4_address: 172.20.0.31
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bazar_user -d bazar_orders"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  mongodb:
+    image: mongo:7.0
+    container_name: bazar-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+      MONGO_INITDB_DATABASE: bazar_products
+    volumes:
+      - mongodb-data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      bazar-microservices:
+        ipv4_address: 172.20.0.32
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: bazar-redis
+    command: redis-server --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      bazar-microservices:
+        ipv4_address: 172.20.0.33
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # =================================================================
+  # SEARCH & ANALYTICS
+  # =================================================================
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: bazar-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      bazar-microservices:
+        ipv4_address: 172.20.0.40
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.8-alpine
+    container_name: bazar-clickhouse
+    environment:
+      CLICKHOUSE_DB: bazar_analytics
+      CLICKHOUSE_USER: admin
+      CLICKHOUSE_PASSWORD: admin123
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    networks:
+      bazar-microservices:
+        ipv4_address: 172.20.0.41
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8123/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # =================================================================
+  # MESSAGE QUEUES
+  # =================================================================
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: bazar-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+    networks:
+      bazar-microservices:
+        ipv4_address: 172.20.0.50
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: bazar-kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 300000
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    ports:
+      - "9092:9092"
+    networks:
+      bazar-microservices:
+        ipv4_address: 172.20.0.51
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: bazar-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      bazar-microservices:
+        ipv4_address: 172.20.0.52
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # =================================================================
+  # BIG DATA PROCESSING
+  # =================================================================
+
+  spark-master:
+    image: bitnami/spark:3.5
+    container_name: bazar-spark-master
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    ports:
+      - "8081:8080"
+      - "7077:7077"
+    networks:
+      bazar-microservices:
+        ipv4_address: 172.20.0.60
+
+  spark-worker:
+    image: bitnami/spark:3.5
+    container_name: bazar-spark-worker
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_MEMORY=2G
+      - SPARK_WORKER_CORES=2
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    depends_on:
+      - spark-master
+    networks:
+      bazar-microservices:
+        ipv4_address: 172.20.0.61
+
+  # =================================================================
+  # MONITORING & OBSERVABILITY
+  # =================================================================
+
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: bazar-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./monitoring/prometheus/prometheus-microservices.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      bazar-microservices:
+        ipv4_address: 172.20.0.70
+
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: bazar-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    ports:
+      - "3000:3000"
+    networks:
+      bazar-microservices:
+        ipv4_address: 172.20.0.71
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.50
+    container_name: bazar-jaeger
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+      - "14250:14250"
+    networks:
+      bazar-microservices:
+        ipv4_address: 172.20.0.72

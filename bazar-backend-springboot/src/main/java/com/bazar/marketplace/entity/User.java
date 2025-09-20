@@ -63,22 +63,25 @@ public class User {
     @Size(max = 50, message = "Last name cannot exceed 50 characters")
     private String lastName;
     
-    @Column(name = "phone_number", length = 20)
+    @Column(name = "phone", length = 20)
     @Pattern(regexp = "^(\\+213|0)[5-7][0-9]{8}$", message = "Phone number must be a valid Algerian number (+213 or 0 followed by 5, 6, or 7 and 8 digits)")
-    private String phoneNumber;
+    private String phone;
     
     @Column(name = "profile_image_url", length = 500)
     @Size(max = 500, message = "Profile image URL cannot exceed 500 characters")
     private String profileImageUrl;
     
-    @Column(nullable = false)
-    private Boolean active = true;
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
     
-    @Column(name = "email_verified", nullable = false)
-    private Boolean emailVerified = false;
+    @Column(name = "is_verified", nullable = false)
+    private Boolean isVerified = false;
     
-    @Column(name = "phone_verified", nullable = false)
-    private Boolean phoneVerified = false;
+    @Column(name = "email_verified_at")
+    private LocalDateTime emailVerifiedAt;
+    
+    @Column(name = "phone_verified_at")
+    private LocalDateTime phoneVerifiedAt;
     
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
@@ -126,7 +129,19 @@ public class User {
      * @return true si l'utilisateur peut se connecter, false sinon
      */
     public boolean canLogin() {
-        return active && !isAccountLocked() && emailVerified;
+        return isActive && !isAccountLocked() && isVerified;
+    }
+    
+    /**
+     * Get full name
+     * 
+     * @return full name combining first and last name
+     */
+    public String getFullName() {
+        if (firstName == null && lastName == null) {
+            return email;
+        }
+        return (firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "");
     }
     
     /**

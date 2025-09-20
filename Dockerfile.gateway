@@ -1,0 +1,90 @@
+# Multi-stage Dockerfile for BAZAR API Gateway
+# Specialized build for API Gateway microservice
+
+# =================================================================
+# Stage 1: Build Stage
+# =================================================================
+FROM maven:3.9.6-openjdk-17-slim AS builder
+
+WORKDIR /app
+
+# Copy Maven files
+COPY pom.xml ./
+COPY .mvn .mvn
+COPY mvnw ./
+
+# Download dependencies
+RUN ./mvnw dependency:go-offline -B
+
+# Copy source code
+COPY src ./src
+
+# Build with Gateway profile
+RUN ./mvnw clean package -DskipTests -B -Pgateway
+
+# Extract JAR layers
+RUN java -Djarmode=layertools -jar target/*.jar extract
+
+# =================================================================
+# Stage 2: Runtime Stage
+# =================================================================
+FROM openjdk:17-jre-slim AS runtime
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    dumb-init \
+    netcat-openbsd \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create user
+RUN groupadd -r gateway && useradd -r -g gateway -s /bin/false gateway
+
+WORKDIR /app
+
+# Copy layers
+COPY --from=builder app/dependencies/ ./
+COPY --from=builder app/spring-boot-loader/ ./
+COPY --from=builder app/snapshot-dependencies/ ./
+COPY --from=builder app/application/ ./
+
+# Create directories
+RUN mkdir -p /app/logs && chown -R gateway:gateway /app
+
+USER gateway
+
+# Expose ports
+EXPOSE 8080 8443
+
+# Health check with retry for Gateway
+HEALTHCHECK --interval=15s --timeout=5s --start-period=45s --retries=5 \
+  CMD curl -f http://localhost:8080/actuator/health || exit 1
+
+# Gateway-specific JVM options
+ENV JAVA_OPTS="-Xmx768m -Xms256m -XX:+UseG1GC -XX:+UseContainerSupport -XX:MaxRAMPercentage=70.0 -Dspring.profiles.active=docker -Djava.security.egd=file:/dev/./urandom"
+
+# Wait for Eureka before starting
+ENV WAIT_FOR_EUREKA="true"
+ENV EUREKA_HOST="service-registry"
+ENV EUREKA_PORT="8761"
+
+ENTRYPOINT ["dumb-init", "--"]
+
+# Startup script with dependency waiting
+CMD ["sh", "-c", "\
+  if [ \"$WAIT_FOR_EUREKA\" = \"true\" ]; then \
+    echo 'Waiting for Eureka Server...'; \
+    while ! nc -z $EUREKA_HOST $EUREKA_PORT; do \
+      echo 'Eureka not ready, waiting 5 seconds...'; \
+      sleep 5; \
+    done; \
+    echo 'Eureka is ready, starting API Gateway...'; \
+  fi; \
+  java $JAVA_OPTS org.springframework.boot.loader.JarLauncher"]
+
+# Labels
+LABEL maintainer="BAZAR Development Team"
+LABEL version="1.0.0"
+LABEL description="BAZAR API Gateway - Spring Cloud Gateway"
+LABEL service.type="api-gateway"
+LABEL service.port="8080"
