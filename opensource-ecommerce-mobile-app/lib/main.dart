@@ -17,7 +17,10 @@ import 'package:bazar_marketplace_app/screens/product_screen/utils/index.dart';
 import 'package:bazar_marketplace_app/utils/app_navigation.dart';
 import 'package:bazar_marketplace_app/utils/push_notifications_manager.dart';
 import 'package:bazar_marketplace_app/utils/theme_provider.dart';
-import 'package:bazar_marketplace_app/utils/bazar_glassmorphism_theme.dart';
+import 'package:bazar_marketplace_app/utils/bazar_theme.dart';
+import 'package:bazar_marketplace_app/screens/bazar_home/bazar_home_screen.dart';
+import 'package:bazar_marketplace_app/screens/product_detail/product_detail_screen.dart';
+import 'package:bazar_marketplace_app/screens/checkout/checkout_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -225,12 +228,11 @@ class _BazarAppState extends State<BazarApp> {
         child: Consumer<ThemeProvider>(
           builder: (context, ThemeProvider themeNotifier, child) {
             return MaterialApp(
-              theme: BazarGlassmorphismTheme.lightGlassmorphismTheme,
+              theme: BazarTheme.lightTheme,
               themeMode: ThemeMode.system,
-              darkTheme: BazarGlassmorphismTheme.darkGlassmorphismTheme,
-              initialRoute: appRoot,
-              onGenerateRoute: generateRoute,
-              title: defaultAppTitle,
+              darkTheme: BazarTheme.darkTheme,
+              home: const BazarHomeScreen(),
+              title: 'Bazar Marketplace',
               debugShowCheckedModeBanner: false,
               supportedLocales: supportedLocale,
               localizationsDelegates: const [
