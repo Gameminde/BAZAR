@@ -11,11 +11,11 @@
 import 'package:bazar_marketplace_app/data_model/product_model/booking_slots_modal.dart';
 import 'package:bazar_marketplace_app/screens/cart_screen/utils/cart_index.dart';
 import 'package:bazar_marketplace_app/screens/product_screen/utils/index.dart';
+import 'package:bazar_marketplace_app/widgets/glassmorphism/index.dart';
 import 'package:hive/hive.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../data_model/download_sample_model.dart';
-import 'dart:developer';
 
 class ProductScreen extends StatefulWidget {
   final int? productId;
@@ -23,7 +23,7 @@ class ProductScreen extends StatefulWidget {
   final String? urlKey;
 
   const ProductScreen({Key? key, this.title, this.productId, this.urlKey})
-      : super(key: key);
+    : super(key: key);
 
   @override
   State<ProductScreen> createState() => _ProductScreenState();
@@ -69,39 +69,31 @@ class _ProductScreenState extends State<ProductScreen> {
     return ScaffoldMessenger(
       key: scaffoldMessengerKey,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            widget.title ?? '',
-          ),
-          centerTitle: false,
-          automaticallyImplyLeading: false,
-          leading: IconButton(
-              onPressed: () {
-                if (productData != null) {
-                  setRecentViewed(productData);
-                }
-                Navigator.pop(context);
-              },
-              icon: const Icon(Icons.arrow_back_ios)),
+        appBar: GlassmorphicAppBar(
+          title: widget.title ?? 'Produit',
+          showBackButton: true,
+          onBackPressed: () {
+            if (productData != null) {
+              setRecentViewed(productData);
+            }
+            Navigator.pop(context);
+          },
           actions: [
-            IconButton(
-                onPressed: () async {
-                  await Share.share(
-                    productData?.shareURL ?? "",
-                    subject: widget.title ?? "",
-                  );
-                },
-                icon: const Icon(
-                  Icons.share,
-                )),
+            GlassmorphicIconButton(
+              icon: Icons.share,
+              onPressed: () async {
+                await Share.share(productData?.shareURL ?? "");
+              },
+            ),
             StreamBuilder(
               stream: GlobalData.cartCountController.stream,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return _cartButtonValue(0);
+                  return _glassmorphicCartButton(0);
                 }
-                return _cartButtonValue(
-                    int.tryParse(snapshot.data.toString()) ?? 0);
+                return _glassmorphicCartButton(
+                  int.tryParse(snapshot.data.toString()) ?? 0,
+                );
               },
             ),
           ],
@@ -116,32 +108,61 @@ class _ProductScreenState extends State<ProductScreen> {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0),
         child: BadgeIcon(
-            icon: IconButton(
-              icon: const Icon(Icons.shopping_bag_outlined),
-              onPressed: () {
-                checkInternetConnection().then((value) {
-                  if (value) {
-                    Navigator.pushNamed(context, cartScreen).then((value) {
-                      if (value == true) {
-                        ProductScreenBloc productScreenBloc =
-                            context.read<ProductScreenBloc>();
-                        productScreenBloc
-                            .add(FetchProductEvent(widget.urlKey ?? ""));
-                      }
-                    });
-                  } else {
-                    ShowMessage.errorNotification(
-                        StringConstants.internetIssue.localized(), context);
-                  }
-                });
-              },
-            ),
-            badgeCount: count),
+          icon: IconButton(
+            icon: const Icon(Icons.shopping_bag_outlined),
+            onPressed: () {
+              checkInternetConnection().then((value) {
+                if (value) {
+                  Navigator.pushNamed(context, cartScreen).then((value) {
+                    if (value == true) {
+                      ProductScreenBloc productScreenBloc = context
+                          .read<ProductScreenBloc>();
+                      productScreenBloc.add(
+                        FetchProductEvent(widget.urlKey ?? ""),
+                      );
+                    }
+                  });
+                } else {
+                  ShowMessage.errorNotification(
+                    StringConstants.internetIssue.localized(),
+                    context,
+                  );
+                }
+              });
+            },
+          ),
+          badgeCount: count,
+        ),
       ),
       onTap: () {
         Navigator.pushNamed(context, cartScreen).then((value) {
           if (value == true) {
             productScreenBloc?.add(FetchProductEvent(widget.urlKey ?? ""));
+          }
+        });
+      },
+    );
+  }
+
+  _glassmorphicCartButton(int count) {
+    return GlassmorphicIconButton(
+      icon: Icons.shopping_bag_outlined,
+      badgeCount: count,
+      onPressed: () {
+        checkInternetConnection().then((value) {
+          if (value) {
+            Navigator.pushNamed(context, cartScreen).then((value) {
+              if (value == true) {
+                ProductScreenBloc productScreenBloc = context
+                    .read<ProductScreenBloc>();
+                productScreenBloc.add(FetchProductEvent(widget.urlKey ?? ""));
+              }
+            });
+          } else {
+            ShowMessage.errorNotification(
+              StringConstants.internetIssue.localized(),
+              context,
+            );
           }
         });
       },
@@ -184,7 +205,9 @@ class _ProductScreenState extends State<ProductScreen> {
 
           if (state.model?.success == true) {
             DownloadFile().saveBase64String(
-                downloadSampleModel?.string ?? "", state.fileName ?? "Sample");
+              downloadSampleModel?.string ?? "",
+              state.fileName ?? "Sample",
+            );
           } else {
             ShowMessage.errorNotification(state.error ?? "", context);
           }
@@ -204,8 +227,9 @@ class _ProductScreenState extends State<ProductScreen> {
     if (state is FetchProductState) {
       if (state.status == ProductStatus.success) {
         productData = state.productData;
-        productFlats = productData?.productFlats
-            ?.firstWhereOrNull((e) => e.locale == GlobalData.locale);
+        productFlats = productData?.productFlats?.firstWhereOrNull(
+          (e) => e.locale == GlobalData.locale,
+        );
 
         cart = state.productData?.cart;
         GlobalData.cartCountController.sink.add(appStoragePref.getCartCount());
@@ -221,8 +245,9 @@ class _ProductScreenState extends State<ProductScreen> {
     if (state is AddToCartProductState) {
       isLoading = false;
       if (state.status == ProductStatus.success) {
-        GlobalData.cartCountController.sink
-            .add(addToCartModel?.cart?.itemsQty ?? 0);
+        GlobalData.cartCountController.sink.add(
+          addToCartModel?.cart?.itemsQty ?? 0,
+        );
       }
     }
     if (state is AddToWishListProductState) {
@@ -246,40 +271,44 @@ class _ProductScreenState extends State<ProductScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: AppSizes.spacingWide * 4),
-          child: ProductView(
-            bookingSlotsData: bookingSlotsData,
-            productData: productData,
-            isLoading: isLoading,
-            isLoggedIn: isLoggedIn,
-            callback: (configurableParams,
-                bundleParams,
-                selectList,
-                selectParam,
-                groupedParams,
-                downloadLinks,
-                qty,
-                configurableProductId,
-                bookingParams,
-                customizableOptionsSelection // <-- add here
-                ) {
-              this.configurableParams = configurableParams;
-              this.bundleParams = bundleParams;
-              this.selectList = selectList;
-              this.selectParam = selectParam;
-              this.groupedParams = groupedParams;
-              this.downloadLinks = downloadLinks;
-              this.qty = qty;
-              this.configurableProductId = configurableProductId;
-              this.bookingParams = bookingParams;
-              this.customizableOptionsSelection =
-                  customizableOptionsSelection; // <-- add here
-            },
-            scaffoldMessengerKey: scaffoldMessengerKey,
-            productId: widget.productId,
-            price: price,
-            configurableProductId: configurableProductId,
-            productScreenBloc: productScreenBloc,
-            scrollController: _scrollController,
+          child: GlassmorphicCard(
+            child: ProductView(
+              bookingSlotsData: bookingSlotsData,
+              productData: productData,
+              isLoading: isLoading,
+              isLoggedIn: isLoggedIn,
+              callback:
+                  (
+                    configurableParams,
+                    bundleParams,
+                    selectList,
+                    selectParam,
+                    groupedParams,
+                    downloadLinks,
+                    qty,
+                    configurableProductId,
+                    bookingParams,
+                    customizableOptionsSelection, // <-- add here
+                  ) {
+                    this.configurableParams = configurableParams;
+                    this.bundleParams = bundleParams;
+                    this.selectList = selectList;
+                    this.selectParam = selectParam;
+                    this.groupedParams = groupedParams;
+                    this.downloadLinks = downloadLinks;
+                    this.qty = qty;
+                    this.configurableProductId = configurableProductId;
+                    this.bookingParams = bookingParams;
+                    this.customizableOptionsSelection =
+                        customizableOptionsSelection; // <-- add here
+                  },
+              scaffoldMessengerKey: scaffoldMessengerKey,
+              productId: widget.productId,
+              price: price,
+              configurableProductId: configurableProductId,
+              productScreenBloc: productScreenBloc,
+              scrollController: _scrollController,
+            ),
           ),
         ),
         Opacity(
@@ -288,51 +317,39 @@ class _ProductScreenState extends State<ProductScreen> {
             height: AppSizes.spacingWide * 4,
             color: Theme.of(context).scaffoldBackgroundColor,
             child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(vertical: 14.0, horizontal: 16),
-              child: MaterialButton(
-                  shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppSizes.spacingMedium),
-                      side: BorderSide(
-                          color: Theme.of(context).colorScheme.onBackground)),
-                  elevation: AppSizes.spacingSmall,
-                  height: AppSizes.buttonHeight,
-                  minWidth: MediaQuery.of(context).size.width,
-                  textColor: Theme.of(context).colorScheme.onBackground,
-                  onPressed: (productData?.isSaleable ?? false)
-                      ? () {
-                          checkInternetConnection().then((value) {
-                            if (value) {
-                              ProductScreenBloc productBloc =
-                                  context.read<ProductScreenBloc>();
-                              productBloc.add(OnClickProductLoaderEvent(
-                                  isReqToShowLoader: true));
-                              _addToCart(context);
-                            } else {
-                              ShowMessage.errorNotification(
-                                  StringConstants.internetIssue.localized(),
-                                  context);
-                            }
-                          });
-                        }
-                      : null,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(StringConstants.addToCart.localized().toUpperCase(),
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelMedium
-                              ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onBackground)),
-                    ],
-                  )),
+              padding: const EdgeInsets.symmetric(
+                vertical: 14.0,
+                horizontal: 16,
+              ),
+              child: GlassmorphicButton(
+                text: StringConstants.addToCart.localized().toUpperCase(),
+                isPrimary: true,
+                width: MediaQuery.of(context).size.width,
+                onPressed: (productData?.isSaleable ?? false)
+                    ? () {
+                        checkInternetConnection().then((value) {
+                          if (value) {
+                            ProductScreenBloc productBloc = context
+                                .read<ProductScreenBloc>();
+                            productBloc.add(
+                              OnClickProductLoaderEvent(
+                                isReqToShowLoader: true,
+                              ),
+                            );
+                            _addToCart(context);
+                          } else {
+                            ShowMessage.errorNotification(
+                              StringConstants.internetIssue.localized(),
+                              context,
+                            );
+                          }
+                        });
+                      }
+                    : null,
+              ),
             ),
           ),
-        )
+        ),
       ],
     );
   }
@@ -355,7 +372,8 @@ class _ProductScreenState extends State<ProductScreen> {
             case 'date':
             case 'datetime':
             case 'time':
-              isFilled = (selected != null &&
+              isFilled =
+                  (selected != null &&
                   (selected['value']?.toString().isNotEmpty ?? false));
               break;
             case 'file':
@@ -363,7 +381,8 @@ class _ProductScreenState extends State<ProductScreen> {
               break;
             case 'checkbox':
             case 'multiselect':
-              isFilled = (selected != null &&
+              isFilled =
+                  (selected != null &&
                   (selected['priceOptionIds'] as Set?)?.isNotEmpty == true);
               break;
             case 'radio':
@@ -379,8 +398,9 @@ class _ProductScreenState extends State<ProductScreen> {
               "${option.translations?.label ?? option.label ?? 'Option'} ${StringConstants.isRequired.localized()}",
               context,
             );
-            productScreenBloc
-                .add(OnClickProductLoaderEvent(isReqToShowLoader: false));
+            productScreenBloc.add(
+              OnClickProductLoaderEvent(isReqToShowLoader: false),
+            );
             return;
           }
         }
@@ -390,7 +410,9 @@ class _ProductScreenState extends State<ProductScreen> {
 
     // --- Prepare customizableOptions for server ---
     final customizableOptionsPayload = _prepareCustomizableOptionsPayload(
-        customOptions, customizableOptionsSelection);
+      customOptions,
+      customizableOptionsSelection,
+    );
 
     // --- Extract files for multipart upload ---
     final List filesToUpload = [];
@@ -404,7 +426,8 @@ class _ProductScreenState extends State<ProductScreen> {
     if (productData?.type == StringConstants.grouped) {
       if (groupedParams.isNotEmpty) {
         list.add(groupedParams);
-        productScreenBloc.add(AddToCartProductEvent(
+        productScreenBloc.add(
+          AddToCartProductEvent(
             qty,
             productData?.id ?? "",
             downloadLinks,
@@ -415,19 +438,24 @@ class _ProductScreenState extends State<ProductScreen> {
             "",
             bookingParams,
             customizableOptionsPayload, // <-- pass here
-            filesToUpload // <-- pass files
-            ));
+            filesToUpload, // <-- pass files
+          ),
+        );
       } else {
         ShowMessage.warningNotification(
-            StringConstants.atLeastOneWarning.localized(), context);
-        productScreenBloc
-            .add(OnClickProductLoaderEvent(isReqToShowLoader: false));
+          StringConstants.atLeastOneWarning.localized(),
+          context,
+        );
+        productScreenBloc.add(
+          OnClickProductLoaderEvent(isReqToShowLoader: false),
+        );
         return;
       }
     } else if (productData?.type == StringConstants.bundle) {
       if (bundleParams.isNotEmpty) {
         list.add(bundleParams);
-        productScreenBloc.add(AddToCartProductEvent(
+        productScreenBloc.add(
+          AddToCartProductEvent(
             qty,
             productData?.id ?? "",
             downloadLinks,
@@ -438,19 +466,24 @@ class _ProductScreenState extends State<ProductScreen> {
             "",
             bookingParams,
             customizableOptionsPayload, // <-- pass here
-            filesToUpload // <-- pass files
-            ));
+            filesToUpload, // <-- pass files
+          ),
+        );
       } else {
         ShowMessage.warningNotification(
-            StringConstants.atLeastOneWarning.localized(), context);
+          StringConstants.atLeastOneWarning.localized(),
+          context,
+        );
 
-        productScreenBloc
-            .add(OnClickProductLoaderEvent(isReqToShowLoader: false));
+        productScreenBloc.add(
+          OnClickProductLoaderEvent(isReqToShowLoader: false),
+        );
         return;
       }
     } else if (productData?.type == StringConstants.downloadable) {
       if (downloadLinks.isNotEmpty) {
-        productScreenBloc.add(AddToCartProductEvent(
+        productScreenBloc.add(
+          AddToCartProductEvent(
             qty,
             productData?.id ?? "",
             downloadLinks,
@@ -461,13 +494,17 @@ class _ProductScreenState extends State<ProductScreen> {
             "",
             bookingParams,
             customizableOptionsPayload, // <-- pass here
-            filesToUpload // <-- pass files
-            ));
+            filesToUpload, // <-- pass files
+          ),
+        );
       } else {
         ShowMessage.warningNotification(
-            StringConstants.linkRequired.localized(), context);
-        productScreenBloc
-            .add(OnClickProductLoaderEvent(isReqToShowLoader: false));
+          StringConstants.linkRequired.localized(),
+          context,
+        );
+        productScreenBloc.add(
+          OnClickProductLoaderEvent(isReqToShowLoader: false),
+        );
 
         return;
       }
@@ -478,12 +515,16 @@ class _ProductScreenState extends State<ProductScreen> {
           configurableParams.length <
               (productData?.configurableData?.attributes?.length ?? 0)) {
         ShowMessage.warningNotification(
-            StringConstants.pleaseSelectVariants.localized(), context);
+          StringConstants.pleaseSelectVariants.localized(),
+          context,
+        );
 
-        productScreenBloc
-            .add(OnClickProductLoaderEvent(isReqToShowLoader: false));
+        productScreenBloc.add(
+          OnClickProductLoaderEvent(isReqToShowLoader: false),
+        );
       } else {
-        productScreenBloc.add(AddToCartProductEvent(
+        productScreenBloc.add(
+          AddToCartProductEvent(
             qty,
             productData?.id ?? "",
             downloadLinks,
@@ -494,7 +535,9 @@ class _ProductScreenState extends State<ProductScreen> {
             "",
             bookingParams,
             customizableOptionsPayload,
-            filesToUpload));
+            filesToUpload,
+          ),
+        );
       }
     } else if (productData?.type == StringConstants.booking) {
       if (bookingParams.isNotEmpty &&
@@ -506,7 +549,8 @@ class _ProductScreenState extends State<ProductScreen> {
               bookingParams["note"] != null &&
               bookingParams["note"].toString() != '"null"' &&
               bookingParams["note"].toString().trim().isNotEmpty) {
-            productScreenBloc.add(AddToCartProductEvent(
+            productScreenBloc.add(
+              AddToCartProductEvent(
                 qty,
                 productData?.id ?? "",
                 downloadLinks,
@@ -517,15 +561,18 @@ class _ProductScreenState extends State<ProductScreen> {
                 "",
                 bookingParams,
                 customizableOptionsPayload, // <-- pass here
-                filesToUpload // <-- pass files
-                ));
+                filesToUpload, // <-- pass files
+              ),
+            );
           } else {
             ShowMessage.warningNotification("Notes are  required", context);
-            productScreenBloc
-                .add(OnClickProductLoaderEvent(isReqToShowLoader: false));
+            productScreenBloc.add(
+              OnClickProductLoaderEvent(isReqToShowLoader: false),
+            );
           }
         } else {
-          productScreenBloc.add(AddToCartProductEvent(
+          productScreenBloc.add(
+            AddToCartProductEvent(
               qty,
               productData?.id ?? "",
               downloadLinks,
@@ -536,15 +583,17 @@ class _ProductScreenState extends State<ProductScreen> {
               "",
               bookingParams,
               customizableOptionsPayload, // <-- pass here
-              filesToUpload // <-- pass files
-              ));
+              filesToUpload, // <-- pass files
+            ),
+          );
         }
       } else if (bookingParams.isNotEmpty &&
           bookingParams["dateFrom"] != null &&
           bookingParams["dateFrom"].toString().trim().isNotEmpty &&
           bookingParams["dateTo"] != null &&
           bookingParams["dateTo"].toString().trim().isNotEmpty) {
-        productScreenBloc.add(AddToCartProductEvent(
+        productScreenBloc.add(
+          AddToCartProductEvent(
             qty,
             productData?.id ?? "",
             downloadLinks,
@@ -555,16 +604,21 @@ class _ProductScreenState extends State<ProductScreen> {
             "",
             bookingParams,
             customizableOptionsPayload, // <-- pass here
-            filesToUpload // <-- pass files
-            ));
+            filesToUpload, // <-- pass files
+          ),
+        );
       } else {
         ShowMessage.warningNotification(
-            StringConstants.pleaseSelectVariants.localized(), context);
-        productScreenBloc
-            .add(OnClickProductLoaderEvent(isReqToShowLoader: false));
+          StringConstants.pleaseSelectVariants.localized(),
+          context,
+        );
+        productScreenBloc.add(
+          OnClickProductLoaderEvent(isReqToShowLoader: false),
+        );
       }
     } else {
-      productScreenBloc.add(AddToCartProductEvent(
+      productScreenBloc.add(
+        AddToCartProductEvent(
           qty,
           productData?.id ?? "",
           downloadLinks,
@@ -575,14 +629,17 @@ class _ProductScreenState extends State<ProductScreen> {
           "",
           bookingParams,
           customizableOptionsPayload, // <-- pass here
-          filesToUpload // <-- pass files
-          ));
+          filesToUpload, // <-- pass files
+        ),
+      );
     }
   }
 
   /// Converts the selection map to the required server format
   List<Map<String, dynamic>> _prepareCustomizableOptionsPayload(
-      List customOptions, Map<String, dynamic> selection) {
+    List customOptions,
+    Map<String, dynamic> selection,
+  ) {
     List<Map<String, dynamic>> result = [];
     for (final option in customOptions) {
       final selected = selection[option.id?.toString()];
@@ -596,13 +653,14 @@ class _ProductScreenState extends State<ProductScreen> {
           if ((selected['value']?.toString().isNotEmpty ?? false)) {
             result.add({
               'id': option.id,
-              'value': ['"${selected['value'].toString()}"']
+              'value': ['"${selected['value'].toString()}"'],
             });
           }
           break;
         case 'checkbox':
         case 'multiselect':
-          final ids = (selected['priceOptionIds'] as Set?)
+          final ids =
+              (selected['priceOptionIds'] as Set?)
                   ?.map((e) => '"${e.toString()}"')
                   .toList() ??
               [];
@@ -616,7 +674,7 @@ class _ProductScreenState extends State<ProductScreen> {
           if (selected['priceOptionId'] != null) {
             result.add({
               'id': option.id,
-              'value': [selected['priceOptionId'].toString()]
+              'value': [selected['priceOptionId'].toString()],
             });
           }
           break;
@@ -624,7 +682,7 @@ class _ProductScreenState extends State<ProductScreen> {
           if (selected['value'] != null) {
             result.add({
               'id': option.id,
-              'file': selected['value'] // PlatformFile or File object
+              'file': selected['value'], // PlatformFile or File object
             });
           }
           break;
@@ -640,9 +698,11 @@ class _ProductScreenState extends State<ProductScreen> {
     if ((productData?.configurableData?.index ?? []).isNotEmpty) {
       id = productData?.configurableData?.index?[0].id;
     }
-    for (var indexData = 0;
-        indexData < (productData?.configurableData?.index?.length ?? 0);
-        indexData++) {
+    for (
+      var indexData = 0;
+      indexData < (productData?.configurableData?.index?.length ?? 0);
+      indexData++
+    ) {
       List map = [];
 
       Index? data = productData?.configurableData?.index?[indexData];
@@ -670,7 +730,9 @@ class _ProductScreenState extends State<ProductScreen> {
 
   void setRecentViewed(NewProducts? productData) async {
     Hive.openBox("recentProducts").then((box) {
-      box.put(productData?.id, productData).then(
+      box
+          .put(productData?.id, productData)
+          .then(
             (value) =>
                 RecentViewController.controller.sink.add(productData?.id),
           );

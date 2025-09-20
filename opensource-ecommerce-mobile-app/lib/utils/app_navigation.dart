@@ -30,6 +30,7 @@ import 'package:bazar_marketplace_app/screens/gdpr/view/gdpr_screen.dart';
 import 'package:bazar_marketplace_app/screens/home_page/bloc/home_page_bloc.dart';
 import 'package:bazar_marketplace_app/screens/home_page/bloc/home_page_repository.dart';
 import 'package:bazar_marketplace_app/screens/home_page/home_page.dart';
+import 'package:bazar_marketplace_app/screens/home_page/simple_glassmorphic_home.dart';
 import 'package:bazar_marketplace_app/screens/order_detail/bloc/order_detail_bloc.dart';
 import 'package:bazar_marketplace_app/screens/order_detail/bloc/order_detail_repository.dart';
 import 'package:bazar_marketplace_app/screens/order_detail/view/order_detail.dart';
@@ -122,12 +123,14 @@ Route<dynamic>? generateRoute(RouteSettings settings) {
         builder: (_) => MultiBlocProvider(
           providers: [
             BlocProvider<HomePageBloc>(
-                create: (context) => HomePageBloc(HomePageRepositoryImp())),
+              create: (context) => HomePageBloc(HomePageRepositoryImp()),
+            ),
             BlocProvider<DrawerBloc>(
-                create: (context) =>
-                    DrawerBloc(repository: DrawerPageRepositoryImp())),
+              create: (context) =>
+                  DrawerBloc(repository: DrawerPageRepositoryImp()),
+            ),
           ],
-          child: const HomeScreen(),
+          child: const SimpleGlassmorphicHome(),
         ),
       );
 
@@ -137,12 +140,13 @@ Route<dynamic>? generateRoute(RouteSettings settings) {
         builder: (_) => BlocProvider(
           create: (context) => CategoryBloc(CategoriesRepo()),
           child: SubCategoryScreen(
-              title: data.title,
-              image: data.image,
-              categorySlug: data.categorySlug,
-              metaDescription: data.metaDescription,
-              id: data.id,
-              filters: data.filters),
+            title: data.title,
+            image: data.image,
+            categorySlug: data.categorySlug,
+            metaDescription: data.metaDescription,
+            id: data.id,
+            filters: data.filters,
+          ),
         ),
       );
 
@@ -152,9 +156,10 @@ Route<dynamic>? generateRoute(RouteSettings settings) {
         builder: (_) => BlocProvider(
           create: (context) => ProductScreenBloc(ProductScreenRepo()),
           child: ProductScreen(
-              title: (productData.title),
-              productId: productData.productId,
-              urlKey: productData.urlKey),
+            title: (productData.title),
+            productId: productData.productId,
+            urlKey: productData.urlKey,
+          ),
         ),
       );
 
@@ -193,57 +198,64 @@ Route<dynamic>? generateRoute(RouteSettings settings) {
 
     case signIn:
       return MaterialPageRoute(
-          builder: (_) => BlocProvider(
-                create: (context) =>
-                    SignInBloc(repository: SignInRepositoryImp()),
-                child: const SignInScreen(),
-              ));
+        builder: (_) => BlocProvider(
+          create: (context) => SignInBloc(repository: SignInRepositoryImp()),
+          child: const SignInScreen(),
+        ),
+      );
 
     case signUp:
       bool addShopSlug = settings.arguments as bool;
       return MaterialPageRoute(
-          builder: (_) => BlocProvider(
-                create: (context) =>
-                    SignUpBloc(repository: SignUpRepositoryImp()),
-                child: SignUpScreen(
-                  addShopSlug: addShopSlug,
-                ),
-              ));
+        builder: (_) => BlocProvider(
+          create: (context) => SignUpBloc(repository: SignUpRepositoryImp()),
+          child: SignUpScreen(addShopSlug: addShopSlug),
+        ),
+      );
 
     case forgotPassword:
       return MaterialPageRoute(
-          builder: (_) => BlocProvider(
-              create: (context) => ForgetPasswordBloc(
-                    repository: ForgetPasswordRepositoryImp(),
-                  ),
-              child: const ForgetPasswordScreen()));
+        builder: (_) => BlocProvider(
+          create: (context) =>
+              ForgetPasswordBloc(repository: ForgetPasswordRepositoryImp()),
+          child: const ForgetPasswordScreen(),
+        ),
+      );
 
     case accountInfo:
       return MaterialPageRoute(
-          builder: (_) => BlocProvider(
-              create: (context) =>
-                  AccountInfoBloc(repository: AccountInfoRepositoryImp()),
-              child: const AccountScreen()));
+        builder: (_) => BlocProvider(
+          create: (context) =>
+              AccountInfoBloc(repository: AccountInfoRepositoryImp()),
+          child: const AccountScreen(),
+        ),
+      );
 
     case orderDetailPage:
       return MaterialPageRoute(
-          builder: (_) => BlocProvider(
-              create: (context) =>
-                  OrderDetailBloc(repository: OrderDetailRepositoryImp()),
-              child: OrderDetailScreen(orderId: settings.arguments as int)));
+        builder: (_) => BlocProvider(
+          create: (context) =>
+              OrderDetailBloc(repository: OrderDetailRepositoryImp()),
+          child: OrderDetailScreen(orderId: settings.arguments as int),
+        ),
+      );
 
     case addressList:
       return MaterialPageRoute(
-          builder: (_) => BlocProvider(
-              create: (context) => AddressBloc(AddressRepositoryImp()),
-              child: const AddressScreen()));
+        builder: (_) => BlocProvider(
+          create: (context) => AddressBloc(AddressRepositoryImp()),
+          child: const AddressScreen(),
+        ),
+      );
 
     case reviewList:
       return MaterialPageRoute(
-          builder: (_) => BlocProvider(
-              create: (context) => ReviewsBloc(
-                  repository: ReviewsRepositoryImp(), context: context),
-              child: const ReviewsScreen()));
+        builder: (_) => BlocProvider(
+          create: (context) =>
+              ReviewsBloc(repository: ReviewsRepositoryImp(), context: context),
+          child: const ReviewsScreen(),
+        ),
+      );
 
     case addressListScreen:
       return MaterialPageRoute(
@@ -259,8 +271,11 @@ Route<dynamic>? generateRoute(RouteSettings settings) {
         builder: (_) => BlocProvider(
           create: (context) =>
               AddEditAddressBloc(AddEditAddressRepositoryImp()),
-          child: AddNewAddress(data.isEdit ?? false, data.addressModel,
-              isCheckout: data.isCheckout),
+          child: AddNewAddress(
+            data.isEdit ?? false,
+            data.addressModel,
+            isCheckout: data.isCheckout,
+          ),
         ),
       );
 
@@ -278,28 +293,32 @@ Route<dynamic>? generateRoute(RouteSettings settings) {
     case orderPlacedScreen:
       CartModel? data = settings.arguments as CartModel?;
       return MaterialPageRoute(
-          builder: (_) => BlocProvider(
-                create: (context) => SaveOrderBloc(SaveOrderRepositoryImp()),
-                child: CheckOutSaveOrder(cartModel: data),
-              ));
+        builder: (_) => BlocProvider(
+          create: (context) => SaveOrderBloc(SaveOrderRepositoryImp()),
+          child: CheckOutSaveOrder(cartModel: data),
+        ),
+      );
 
     case checkoutScreen:
       CartNavigationData cartNavigationData =
           settings.arguments as CartNavigationData;
       return MaterialPageRoute(
         builder: (_) => CheckoutScreen(
-            total: cartNavigationData.total,
-            cartScreenBloc: cartNavigationData.cartScreenBloc,
-            cartDetailsModel: cartNavigationData.cartDetailsModel,
-            isDownloadable: cartNavigationData.isDownloadable),
+          total: cartNavigationData.total,
+          cartScreenBloc: cartNavigationData.cartScreenBloc,
+          cartDetailsModel: cartNavigationData.cartDetailsModel,
+          isDownloadable: cartNavigationData.isDownloadable,
+        ),
       );
 
     case orderListScreen:
       return MaterialPageRoute(
-          builder: (_) => BlocProvider(
-              create: (context) =>
-                  OrderListBloc(repository: OrderListRepositoryImp()),
-              child: const OrdersList()));
+        builder: (_) => BlocProvider(
+          create: (context) =>
+              OrderListBloc(repository: OrderListRepositoryImp()),
+          child: const OrdersList(),
+        ),
+      );
 
     case dashboardScreen:
       return MaterialPageRoute(builder: (context) => const DashboardScreen());
@@ -307,113 +326,118 @@ Route<dynamic>? generateRoute(RouteSettings settings) {
     case addReviewScreen:
       AddReviewDetail addReviewDetail = settings.arguments as AddReviewDetail;
       return MaterialPageRoute(
-          builder: (_) => BlocProvider(
-              create: (context) => AddReviewBloc(AddReviewRepositoryImp()),
-              child: AddReview(
-                  imageUrl: addReviewDetail.imageUrl,
-                  productId: addReviewDetail.productId,
-                  productName: addReviewDetail.productName)));
+        builder: (_) => BlocProvider(
+          create: (context) => AddReviewBloc(AddReviewRepositoryImp()),
+          child: AddReview(
+            imageUrl: addReviewDetail.imageUrl,
+            productId: addReviewDetail.productId,
+            productName: addReviewDetail.productName,
+          ),
+        ),
+      );
 
     case compareScreen:
       return MaterialPageRoute(
-          builder: (_) => BlocProvider(
-              create: (context) =>
-                  CompareScreenBloc(CompareScreenRepositoryImp()),
-              child: const CompareScreen()));
+        builder: (_) => BlocProvider(
+          create: (context) => CompareScreenBloc(CompareScreenRepositoryImp()),
+          child: const CompareScreen(),
+        ),
+      );
 
     case downloadableProductScreen:
       return MaterialPageRoute(
-          builder: (_) => BlocProvider(
-              create: (context) =>
-                  DownloadableProductsBloc(DownloadableProductsRepositoryImp()),
-              child: const DownLoadableScreen()));
+        builder: (_) => BlocProvider(
+          create: (context) =>
+              DownloadableProductsBloc(DownloadableProductsRepositoryImp()),
+          child: const DownLoadableScreen(),
+        ),
+      );
 
     case drawerSubCategoryScreen:
       CategoriesArguments data = settings.arguments as CategoriesArguments;
       return MaterialPageRoute(
-          builder: (_) => BlocProvider(
-              create: (context) =>
-                  DrawerSubCategoriesBloc(DrawerSubCategoryRepo()),
-              child: DrawerSubCategoryView(
-                id: data.id,
-                title: data.title,
-                image: data.image,
-                categorySlug: data.categorySlug,
-                metaDescription: data.metaDescription,
-                parentId: data.parentId ?? "1",
-              )));
+        builder: (_) => BlocProvider(
+          create: (context) => DrawerSubCategoriesBloc(DrawerSubCategoryRepo()),
+          child: DrawerSubCategoryView(
+            id: data.id,
+            title: data.title,
+            image: data.image,
+            categorySlug: data.categorySlug,
+            metaDescription: data.metaDescription,
+            parentId: data.parentId ?? "1",
+          ),
+        ),
+      );
 
     case invoiceDetails:
       OrderDetail orderDetailsModel = settings.arguments as OrderDetail;
       return MaterialPageRoute(
-          builder: (_) => BlocProvider(
-              create: (context) =>
-                  OrderInvoiceBloc(repository: OrderInvoiceRepositoryImp()),
-              child: InvoiceScreen(
-                orderDetailsModel: orderDetailsModel,
-              )));
+        builder: (_) => BlocProvider(
+          create: (context) =>
+              OrderInvoiceBloc(repository: OrderInvoiceRepositoryImp()),
+          child: InvoiceScreen(orderDetailsModel: orderDetailsModel),
+        ),
+      );
 
     case shipmentDetails:
       OrderDetail orderDetailsModel = settings.arguments as OrderDetail;
       return MaterialPageRoute(
-          builder: (_) => BlocProvider(
-              create: (context) =>
-                  OrderShipmentsBloc(repository: OrderShipmentsRepositoryImp()),
-              child: OrderShipmentsScreen(
-                orderDetailsModel: orderDetailsModel,
-              )));
+        builder: (_) => BlocProvider(
+          create: (context) =>
+              OrderShipmentsBloc(repository: OrderShipmentsRepositoryImp()),
+          child: OrderShipmentsScreen(orderDetailsModel: orderDetailsModel),
+        ),
+      );
 
     case refundDetails:
       OrderDetail orderDetailsModel = settings.arguments as OrderDetail;
       return MaterialPageRoute(
-          builder: (_) => BlocProvider(
-              create: (context) =>
-                  OrderRefundBloc(repository: OrderRefundRepositoryImp()),
-              child: OrderRefundScreen(
-                orderDetailsModel: orderDetailsModel,
-              )));
+        builder: (_) => BlocProvider(
+          create: (context) =>
+              OrderRefundBloc(repository: OrderRefundRepositoryImp()),
+          child: OrderRefundScreen(orderDetailsModel: orderDetailsModel),
+        ),
+      );
 
     case currencyScreen:
       return MaterialPageRoute(builder: (_) => const CurrencyScreen());
 
     case languageScreen:
-      return MaterialPageRoute(
-        builder: (_) => const Language(),
-      );
+      return MaterialPageRoute(builder: (_) => const Language());
 
     case contactUsScreen:
       return MaterialPageRoute(
-          builder: (_) => BlocProvider(
-              create: (context) =>
-                  ContactUsScreenBloc(ContactUsScreenRepositoryImp()),
-              child: const ContactUsPage()));
+        builder: (_) => BlocProvider(
+          create: (context) =>
+              ContactUsScreenBloc(ContactUsScreenRepositoryImp()),
+          child: const ContactUsPage(),
+        ),
+      );
 
     case commonWebView:
       ColumnModel? item = settings.arguments as ColumnModel?;
       return MaterialPageRoute(
-          builder: (_) => CommonWebView(
-                redirectUrl: item?.url,
-                title: item?.title,
-              ));
+        builder: (_) =>
+            CommonWebView(redirectUrl: item?.url, title: item?.title),
+      );
     case gdpr:
       return MaterialPageRoute(
-          builder: (_) => BlocProvider(
-                create: (context) => GdprBloc(GdprRequestRepo()),
-                child: const GdprScreen(),
-              ));
+        builder: (_) => BlocProvider(
+          create: (context) => GdprBloc(GdprRequestRepo()),
+          child: const GdprScreen(),
+        ),
+      );
 
     case gdprWebView:
       ColumnModel? args = settings.arguments as ColumnModel?;
       return MaterialPageRoute(
-          builder: (_) => GdprWebView(
-                redirectUrl: args?.url,
-                title: args?.title,
-              ));
+        builder: (_) => GdprWebView(redirectUrl: args?.url, title: args?.title),
+      );
     default:
       return MaterialPageRoute(
-          builder: (_) => Scaffold(
-                body: Center(
-                    child: Text('No route defined for ${settings.name}')),
-              ));
+        builder: (_) => Scaffold(
+          body: Center(child: Text('No route defined for ${settings.name}')),
+        ),
+      );
   }
 }

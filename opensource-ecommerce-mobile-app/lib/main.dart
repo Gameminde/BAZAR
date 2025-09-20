@@ -17,6 +17,7 @@ import 'package:bazar_marketplace_app/screens/product_screen/utils/index.dart';
 import 'package:bazar_marketplace_app/utils/app_navigation.dart';
 import 'package:bazar_marketplace_app/utils/push_notifications_manager.dart';
 import 'package:bazar_marketplace_app/utils/theme_provider.dart';
+import 'package:bazar_marketplace_app/utils/bazar_glassmorphism_theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -224,9 +225,9 @@ class _BazarAppState extends State<BazarApp> {
         child: Consumer<ThemeProvider>(
           builder: (context, ThemeProvider themeNotifier, child) {
             return MaterialApp(
-              theme: MobiKulTheme.lightTheme,
+              theme: BazarGlassmorphismTheme.lightGlassmorphismTheme,
               themeMode: ThemeMode.system,
-              darkTheme: MobiKulTheme.darkTheme,
+              darkTheme: BazarGlassmorphismTheme.darkGlassmorphismTheme,
               initialRoute: appRoot,
               onGenerateRoute: generateRoute,
               title: defaultAppTitle,
