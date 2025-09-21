@@ -1,0 +1,98 @@
+name: 🚀 Deployment Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+
+env:
+  FLUTTER_VERSION: '3.22.0'
+
+jobs:
+  deploy-staging:
+    name: 🧪 Deploy to Staging
+    runs-on: ubuntu-latest
+    if: github.event.inputs.environment == 'staging' || github.ref == 'refs/heads/develop'
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🎯 Setup Flutter ${{ env.FLUTTER_VERSION }}
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+        cache: true
+        
+    - name: 📦 Get dependencies
+      run: flutter pub get
+      
+    - name: 🏗️ Build for staging
+      run: flutter build web --release --dart-define=ENVIRONMENT=staging
+      
+    - name: 🚀 Deploy to staging
+      run: |
+        echo "Deploying to staging environment..."
+        # Add your staging deployment commands here
+        
+    - name: 📧 Notify staging deployment
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#staging'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  deploy-production:
+    name: 🌟 Deploy to Production
+    runs-on: ubuntu-latest
+    if: github.event.inputs.environment == 'production' || startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🎯 Setup Flutter ${{ env.FLUTTER_VERSION }}
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+        cache: true
+        
+    - name: 📦 Get dependencies
+      run: flutter pub get
+      
+    - name: 🏗️ Build for production
+      run: flutter build web --release --dart-define=ENVIRONMENT=production
+      
+    - name: 🚀 Deploy to production
+      run: |
+        echo "Deploying to production environment..."
+        # Add your production deployment commands here
+        
+    - name: 📧 Notify production deployment
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#production'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        
+    - name: 🏷️ Create release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false

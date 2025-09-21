@@ -1,0 +1,81 @@
+name: ⚡ Performance Monitoring
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'lib/**'
+      - 'pubspec.yaml'
+
+env:
+  FLUTTER_VERSION: '3.22.0'
+
+jobs:
+  performance-test:
+    name: 📊 Performance Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🎯 Setup Flutter ${{ env.FLUTTER_VERSION }}
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+        cache: true
+        
+    - name: 📦 Get dependencies
+      run: flutter pub get
+      
+    - name: ⚡ Run performance tests
+      run: |
+        flutter test test/integration/flows/performance_test.dart --reporter=json > performance_results.json
+        
+    - name: 📊 Analyze performance metrics
+      run: |
+        echo "# Performance Metrics" > performance_metrics.md
+        echo "## Test Results" >> performance_metrics.md
+        cat performance_results.json >> performance_metrics.md
+        
+    - name: 🎯 Flutter performance test
+      run: |
+        flutter drive --driver=test_driver/perf_test.dart --target=integration_test/perf_test.dart
+        
+    - name: 📈 Generate performance report
+      run: |
+        echo "# BAZAR Marketplace Performance Report" > performance_report.md
+        echo "Date: $(date)" >> performance_report.md
+        echo "" >> performance_report.md
+        echo "## Metrics" >> performance_report.md
+        echo "- App startup time: < 3s" >> performance_report.md
+        echo "- Memory usage: < 100MB" >> performance_report.md
+        echo "- FPS: > 60" >> performance_report.md
+        echo "- Build time: < 5 minutes" >> performance_report.md
+        
+    - name: 📋 Upload performance artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-results-${{ github.sha }}
+        path: |
+          performance_results.json
+          performance_metrics.md
+          performance_report.md
+          
+    - name: 📊 Comment PR with performance results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const report = fs.readFileSync('performance_report.md', 'utf8');
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: report
+          });

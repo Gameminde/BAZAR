@@ -1,0 +1,244 @@
+name: 🚀 Flutter CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: '3.22.0'
+
+jobs:
+  test:
+    name: 🧪 Tests & Coverage
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🎯 Setup Flutter ${{ env.FLUTTER_VERSION }}
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+        cache: true
+        
+    - name: 📦 Get dependencies
+      run: flutter pub get
+      
+    - name: 🔍 Analyze code
+      run: flutter analyze --fatal-infos
+      
+    - name: 🧪 Run unit tests
+      run: flutter test test/unit/ --coverage
+      
+    - name: 🎨 Run widget tests
+      run: flutter test test/widget/ --coverage
+      
+    - name: 📸 Run golden tests
+      run: flutter test test/golden/
+      
+    - name: 📊 Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+        
+    - name: 📋 Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results
+        path: test_driver/
+
+  build:
+    name: 🏗️ Build & Package
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    
+    strategy:
+      matrix:
+        platform: [android, web, windows, macos, linux]
+        
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🎯 Setup Flutter ${{ env.FLUTTER_VERSION }}
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+        cache: true
+        
+    - name: 📦 Get dependencies
+      run: flutter pub get
+      
+    - name: 🏗️ Build ${{ matrix.platform }}
+      run: |
+        case "${{ matrix.platform }}" in
+          android)
+            flutter build apk --release
+            ;;
+          web)
+            flutter build web --release --web-renderer html
+            ;;
+          windows)
+            flutter build windows --release
+            ;;
+          macos)
+            flutter build macos --release
+            ;;
+          linux)
+            flutter build linux --release
+            ;;
+        esac
+        
+    - name: 📦 Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.platform }}-build
+        path: |
+          build/app/outputs/flutter-apk/*.apk
+          build/web/
+          build/windows/runner/Release/
+          build/macos/Build/Products/Release/
+          build/linux/x64/release/bundle/
+
+  integration-test:
+    name: 🔄 Integration Tests
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🎯 Setup Flutter ${{ env.FLUTTER_VERSION }}
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+        cache: true
+        
+    - name: 📦 Get dependencies
+      run: flutter pub get
+      
+    - name: 🔄 Run integration tests
+      run: flutter test integration_test/
+      
+    - name: 📋 Upload integration test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: integration-test-results
+        path: integration_test/
+
+  security-scan:
+    name: 🔒 Security Scan
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🔍 Run security scan
+      uses: securecodewarrior/github-action-add-sarif@v1
+      with:
+        sarif-file: 'security-scan-results.sarif'
+        
+    - name: 📊 Dependency scan
+      run: flutter pub deps --json > dependencies.json
+      
+    - name: 📋 Upload security results
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-scan-results
+        path: |
+          security-scan-results.sarif
+          dependencies.json
+
+  performance-test:
+    name: ⚡ Performance Test
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🎯 Setup Flutter ${{ env.FLUTTER_VERSION }}
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: 'stable'
+        cache: true
+        
+    - name: 📦 Get dependencies
+      run: flutter pub get
+      
+    - name: ⚡ Run performance tests
+      run: |
+        flutter test test/integration/flows/performance_test.dart
+        flutter run --profile --trace-startup --verbose > performance.log 2>&1
+        
+    - name: 📊 Generate performance report
+      run: |
+        echo "# Performance Report" > performance_report.md
+        echo "## Startup Time" >> performance_report.md
+        grep "startup" performance.log >> performance_report.md
+        echo "## Memory Usage" >> performance_report.md
+        grep "memory" performance.log >> performance_report.md
+        
+    - name: 📋 Upload performance results
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-results
+        path: |
+          performance.log
+          performance_report.md
+
+  deploy:
+    name: 🚀 Deploy
+    runs-on: ubuntu-latest
+    needs: [build, integration-test, security-scan]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 📦 Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: web-build
+        path: build/web/
+        
+    - name: 🌐 Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      if: github.ref == 'refs/heads/main'
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./build/web
+        
+    - name: 📱 Deploy to Firebase (Android)
+      uses: w9jds/firebase-action@master
+      if: github.ref == 'refs/heads/main'
+      with:
+        args: deploy --only hosting
+      env:
+        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        
+    - name: 📧 Notify deployment
+      uses: 8398a7/action-slack@v3
+      if: always()
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}

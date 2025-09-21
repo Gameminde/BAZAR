@@ -81,10 +81,17 @@ dependencies:
 
 
 
+  dartz: any
+  hive: any
+  bloc: any
+  go_router: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
+  integration_test:
+    sdk: flutter
+  golden_toolkit: ^0.15.0
+  
   build_runner: ^2.1.4
   retrofit_generator: ^10.0.5
   built_value_generator: ^8.1.2
@@ -95,8 +102,13 @@ dev_dependencies:
   
   # Testing dependencies
   mockito: ^5.4.4
+  analyzer: 8.2.0
 
 
+  hive: any
+  bloc: any
+  dartz: any
+  go_router: any
 flutter:
 
 
