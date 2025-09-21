@@ -3,10 +3,8 @@
 
 import 'package:flutter/material.dart';
 import 'lib/widgets/glassmorphism/glassmorphic_components.dart';
-import 'lib/screens/bazar_home/bazar_home_screen.dart';
 import 'lib/screens/product_detail/product_detail_screen.dart';
 import 'lib/screens/checkout/checkout_screen.dart';
-import 'lib/widgets/glassmorphism/final_test_demo.dart';
 
 void main() {
   print('✅ Test de compilation réussi!');
